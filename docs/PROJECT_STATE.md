@@ -4,9 +4,9 @@ Last updated: 2026-09-09.
 
 ## Current position
 
-**Phase:** design. **Next milestone:** M0, foundation and development environment.
+**Phase:** implementation. **Next milestone:** M1, immutable sources and facts.
 
-Planning artifacts exist. Application code, dependencies, Compose services, workflows, migrations, fixtures, tests, and deployments do not yet exist.
+M0 foundation is implemented: locked tooling, API health, migration, Compose dependencies, offline unit tests, real-service integration test and CI workflow. M1–M7 remain planned.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -14,7 +14,7 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 
 | Milestone | Status | Evidence required to close |
 | --- | --- | --- |
-| M0: foundation | Not started | Fresh-clone startup and initial CI checks |
+| M0: foundation | Complete (local gate; hosted CI pending) | [M0 evidence](evidence/M0.md) |
 | M1: sources and facts | Not started | Preserved real fixture, provenance, duplicate test |
 | M2: durable processing | Not started | Concurrent delivery, crash recovery, retries and DLQ |
 | M3: ingestion and rebuilds | Not started | Resumable backfill and deterministic offline replay |

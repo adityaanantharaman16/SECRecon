@@ -1,0 +1,26 @@
+name: CI
+on: [push, pull_request]
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Generate isolated local configuration
+        run: python3 scripts/bootstrap.py
+      - name: Validate Compose
+        run: docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml config --quiet
+      - name: Build and run checks against real dependencies
+        run: docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test
+      - name: Service diagnostics
+        if: failure()
+        run: docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml logs --tail 80 postgres redis object-store
+      - name: Stop isolated test stack
+        if: always()
+        run: docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml down --volumes
+

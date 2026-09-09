@@ -1,0 +1,32 @@
+[project]
+name = "secrecon"
+version = "0.1.0"
+description = "Replayable SEC ingestion and reconciliation"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+ "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "pydantic-settings>=2.8,<3",
+ "sqlalchemy>=2.0,<2.1", "psycopg[binary]>=3.2,<4", "alembic>=1.15,<2",
+ "httpx>=0.28,<1", "redis>=6,<8", "boto3>=1.37,<2", "typer>=0.15,<1"
+]
+[project.scripts]
+secrecon = "secrecon.cli:app"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[dependency-groups]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "hypothesis>=6,<7", "respx>=0.22,<1", "ruff>=0.11,<1", "mypy>=1.15,<2", "types-redis", "boto3-stubs[s3]", "pip-audit"]
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+[tool.ruff.lint.per-file-ignores]
+"src/secrecon/cli.py" = ["B008"]
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs PostgreSQL, Redis and S3", "fault: destructive only within isolated test stack"]
+addopts = "-ra"

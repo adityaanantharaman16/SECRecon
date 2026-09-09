@@ -1,0 +1,11 @@
+services:
+  postgres:
+    ports: ["127.0.0.1:55432:5432"]
+  redis:
+    ports: ["127.0.0.1:56379:6379"]
+  object-store:
+    ports: ["127.0.0.1:58333:8333"]
+  api:
+    volumes: ["./src:/app/src:ro"]
+    command: ["uvicorn", "secrecon.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
