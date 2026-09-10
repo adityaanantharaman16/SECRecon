@@ -4,9 +4,12 @@ COPY --from=uv /uv /uvx /bin/
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project
 COPY src src
-RUN uv sync --frozen
+RUN uv sync --frozen --no-dev --no-editable
+
+FROM build AS test-build
+RUN uv sync --frozen --no-editable
 
 FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS runtime
 RUN useradd --create-home --uid 10001 app
@@ -17,9 +20,10 @@ COPY --chown=app:app migrations migrations
 COPY --chown=app:app alembic.ini .
 RUN chown app:app /app
 USER app
-CMD ["secrecon", "serve"]
+CMD ["secrecon", "serve", "--host", "0.0.0.0"]
 
 FROM runtime AS test
+COPY --from=test-build --chown=app:app /app/.venv /app/.venv
 COPY --chown=app:app tests tests
 COPY --chown=app:app scripts scripts
 COPY --chown=app:app pyproject.toml .

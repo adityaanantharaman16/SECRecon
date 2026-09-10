@@ -123,6 +123,10 @@ def test_exhaustion_and_redrive_keep_history(engine):
 
 def test_outbox_double_publish_and_queue_loss_recover_from_sql(engine):
     job = enqueue(engine)
+    # This database deliberately survives repeated test runs; put the probe within
+    # the dispatch batch even when older test jobs remain outstanding.
+    with engine.begin() as connection:
+        connection.execute(text("UPDATE jobs SET priority=1000000 WHERE id=:id"), {"id": job})
     queue = make_queue()
     queue.dispatch(engine)
     with engine.begin() as connection:
@@ -132,8 +136,13 @@ def test_outbox_double_publish_and_queue_loss_recover_from_sql(engine):
     queue.redis.delete(queue.stream)
     store.sweep(engine, notification_seconds=0)
     queue.dispatch(engine)
-    messages = queue.read("recovery", block_ms=10)
-    assert any(value == job for _, value in messages)
+    observed = []
+    for _ in range(20):
+        messages = queue.read("recovery", block_ms=10)
+        observed.extend(value for _, value in messages)
+        if job in observed or not messages:
+            break
+    assert job in observed
 
 
 def test_same_key_different_request_is_rejected(engine):

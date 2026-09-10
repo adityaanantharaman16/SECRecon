@@ -79,6 +79,7 @@ class SecClient:
         kind: Literal["submissions", "facts", "document"],
         cik: str,
         accession: str | None = None,
+        backfill_id: str | None = None,
     ) -> Manifest:
         validate_sec_url(url)
         if self.settings.sec_mode != "live":
@@ -125,13 +126,20 @@ class SecClient:
             with self.engine.begin() as connection:
                 register_source(connection, manifest)
                 if manifest.complete and 200 <= manifest.status < 300:
-                    enqueue(
+                    normalization = enqueue(
                         connection,
                         "normalize",
-                        {"event_id": manifest.event_id, "generation": "live"},
-                        f"normalize:live:{PARSER_VERSION}:{manifest.event_id}",
+                        {"event_id": manifest.event_id, "generation": "active"},
+                        f"normalize:active:{PARSER_VERSION}:{manifest.event_id}",
                         priority=10,
                     )
+                    if backfill_id:
+                        connection.execute(
+                            text(
+                                "INSERT INTO backfill_normalizations VALUES (:op,:job) ON CONFLICT DO NOTHING"
+                            ),
+                            {"op": backfill_id, "job": normalization},
+                        )
                 connection.execute(
                     text("""
                     UPDATE fetch_attempts SET status=:status,completed_at=now(),event_id=:event

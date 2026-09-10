@@ -4,6 +4,7 @@ from typing import Literal
 import typer
 import uvicorn
 
+from secrecon.commands import ingestion as ingestion_commands
 from secrecon.commands.jobs import app as jobs_app
 from secrecon.commands.jobs import dispatch, worker
 from secrecon.config import Settings
@@ -16,12 +17,19 @@ app = typer.Typer(no_args_is_help=True)
 app.add_typer(jobs_app, name="jobs")
 app.command()(worker)
 app.command()(dispatch)
+app.add_typer(ingestion_commands.watchlist_app, name="watchlist")
+app.add_typer(ingestion_commands.backfills_app, name="backfills")
+app.command()(ingestion_commands.ingest)
+app.command()(ingestion_commands.backfill)
+app.command()(ingestion_commands.replay)
+app.command()(ingestion_commands.archive_sync)
+app.command()(ingestion_commands.projection_digest)
 
 
 @app.command()
-def serve() -> None:
+def serve(host: str = "127.0.0.1") -> None:
     """Run the local API."""
-    uvicorn.run("secrecon.api.app:create_app", factory=True, host="0.0.0.0", port=8000)
+    uvicorn.run("secrecon.api.app:create_app", factory=True, host=host, port=8000)
 
 
 @app.command("import-source")

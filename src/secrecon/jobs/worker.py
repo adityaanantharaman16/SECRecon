@@ -58,6 +58,12 @@ class Worker:
         except store.LeaseLost:
             logger.info("stale_worker_rejected", extra={"job_id": job_id})
             return True
+        except store.Cancelled:
+            try:
+                store.cancel_claim(self.engine, lease)
+            except store.LeaseLost:
+                pass
+            return True
         except Exception as exc:
             quarantined = isinstance(exc, (SchemaError, ArchiveIntegrityError))
             retryable = isinstance(

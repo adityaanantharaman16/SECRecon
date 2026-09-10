@@ -22,6 +22,7 @@ line-length = 100
 select = ["E4", "E7", "E9", "F", "I", "UP", "B"]
 [tool.ruff.lint.per-file-ignores]
 "src/secrecon/cli.py" = ["B008"]
+"src/secrecon/commands/*.py" = ["B008"]
 [tool.mypy]
 python_version = "3.12"
 strict = true

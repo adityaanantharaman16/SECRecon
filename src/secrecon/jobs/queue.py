@@ -27,6 +27,8 @@ class Queue:
 
     def ack(self, message_id: Any) -> None:
         self.redis.xack(self.stream, self.group, message_id)  # type: ignore[no-untyped-call]
+        # One consumer group in v1; durable history lives in SQL, not this transport.
+        self.redis.xdel(self.stream, message_id)
 
     def read(self, consumer: str, block_ms: int = 1000) -> list[tuple[Any, str]]:
         self.initialize()

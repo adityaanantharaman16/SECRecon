@@ -20,6 +20,28 @@ class IdempotencyConflict(ValueError):
     pass
 
 
+class Cancelled(RuntimeError):
+    pass
+
+
+def cancel_claim(engine: Engine, lease: "Lease") -> None:
+    with engine.begin() as connection:
+        owned(connection, lease)
+        connection.execute(
+            text(
+                "UPDATE jobs SET state='cancelled',lease_until=NULL,updated_at=now() WHERE id=:id"
+            ),
+            {"id": lease.job_id},
+        )
+        connection.execute(
+            text(
+                "UPDATE job_attempts SET outcome='cancelled',ended_at=now() WHERE job_id=:id AND token=:token"
+            ),
+            {"id": lease.job_id, "token": lease.token},
+        )
+        event(connection, lease.job_id, "cancelled")
+
+
 @dataclass(frozen=True)
 class Lease:
     job_id: str

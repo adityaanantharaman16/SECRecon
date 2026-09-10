@@ -54,8 +54,14 @@ def parse(manifest: Manifest, body: bytes) -> ParsedSource:
         payload = json.loads(body, parse_float=Decimal, parse_int=Decimal)
         if not isinstance(payload, dict):
             raise SchemaError("$: expected object")
-        if "cik" in payload and cik_text(str(int(payload["cik"]))) != manifest.cik:
-            raise SchemaError("$.cik: source identity mismatch")
+        if "cik" in payload:
+            raw_cik = payload["cik"]
+            if isinstance(raw_cik, bool) or not isinstance(raw_cik, (str, Decimal)):
+                raise SchemaError("$.cik: invalid identity type")
+            if isinstance(raw_cik, Decimal) and raw_cik != raw_cik.to_integral_value():
+                raise SchemaError("$.cik: expected an integer identity")
+            if cik_text(str(int(raw_cik))) != manifest.cik:
+                raise SchemaError("$.cik: source identity mismatch")
         return (
             parse_facts(payload, manifest)
             if manifest.kind == "facts"

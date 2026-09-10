@@ -9,6 +9,17 @@ from secrecon.ingestion.adapters import PARSER_VERSION, ParsedSource, SchemaErro
 from secrecon.storage.archive import Archive, ArchiveIntegrityError, Manifest
 
 
+def resolve_generation(connection: Connection, generation: str) -> str:
+    if generation == "active":
+        connection.execute(
+            text("SELECT pg_advisory_xact_lock_shared(hashtextextended('projection-active',0))")
+        )
+        return str(
+            connection.scalar(text("SELECT value FROM system_state WHERE key='active_generation'"))
+        )
+    return generation
+
+
 def register_source(connection: Connection, manifest: Manifest) -> None:
     connection.execute(
         text("""
@@ -30,8 +41,9 @@ def register_source(connection: Connection, manifest: Manifest) -> None:
 
 
 def apply_projection(
-    connection: Connection, manifest: Manifest, parsed: ParsedSource, generation: str = "live"
+    connection: Connection, manifest: Manifest, parsed: ParsedSource, generation: str = "active"
 ) -> None:
+    generation = resolve_generation(connection, generation)
     register_source(connection, manifest)
     # Per-company serialization is intentionally coarse at the demo watchlist size.
     connection.execute(
@@ -136,6 +148,7 @@ def apply_projection(
 
 
 def quarantine(connection: Connection, manifest: Manifest, generation: str, reason: str) -> None:
+    generation = resolve_generation(connection, generation)
     register_source(connection, manifest)
     connection.execute(
         text("""
@@ -152,7 +165,7 @@ def quarantine(connection: Connection, manifest: Manifest, generation: str, reas
 
 
 def process_source(
-    engine: Engine, archive: Archive, manifest: Manifest, generation: str = "live"
+    engine: Engine, archive: Archive, manifest: Manifest, generation: str = "active"
 ) -> ParsedSource:
     try:
         parsed = parse(manifest, archive.load(manifest))

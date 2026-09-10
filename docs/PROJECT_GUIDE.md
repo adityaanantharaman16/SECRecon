@@ -1,6 +1,6 @@
 # SECRecon: implementation and milestone guide
 
-Design baseline: 2026-09-09. Project name: SECRecon. This is a build specification, not a claim that features already exist. Current progress is recorded in [PROJECT_STATE.md](PROJECT_STATE.md).
+Design baseline: 2026-09-09; implementation update: 2026-09-10. Project name: SECRecon. This is the living implementation contract. Check [PROJECT_STATE.md](PROJECT_STATE.md) for passed gates, pending acceptance work and the next task; future milestones are not claims of implemented functionality.
 
 Quick navigation: [scope](#1-what-we-are-building) · [stack and Docker](#2-technical-stack-and-local-deployment) · [correctness contracts](#3-correctness-contracts) · [milestones](#4-milestones-and-acceptance-gates) · [API](#5-api-and-operator-contracts) · [testing and failure drills](#6-testing-gates-and-measurable-reliability) · [Git and CI/CD](#7-git-and-cicd-workflow) · [repository and commands](#8-planned-repository-and-command-map) · [session workflow](#9-working-together-without-losing-understanding).
 
@@ -439,7 +439,7 @@ A backup on the same disk protects against accidental logical damage, not disk l
 
 ## 8. Planned repository and command map
 
-Only the planning documents exist today. Introduce the following structure as needed:
+The core package, migrations, fixtures, tests and CI are now implemented. The following target layout also includes later M4–M7 work; the state file identifies what exists today:
 
 ```text
 src/secrecon/
@@ -471,7 +471,7 @@ Dockerfile             shared application image
 pyproject.toml / uv.lock
 ```
 
-Planned command interface (not runnable yet):
+Command map: ingestion, jobs, backfills and replay are implemented. The fault `drill` CLI and release `deploy` CLI are future M6/M7 interfaces; use `scripts/service_drills.py` for the current isolated dependency drill. See the operations runbook for exact supported arguments.
 
 | Task | Target command |
 | --- | --- |
@@ -501,4 +501,4 @@ Suggested prompt for a future implementation agent:
 
 > Read AGENTS.md, docs/PROJECT_STATE.md and the relevant milestone in docs/PROJECT_GUIDE.md. Implement the next incomplete slice, preserving the local/free scope. Explain the behavior and engineering concept, run the required checks, and update the state file with evidence and the next task. Do not claim planned features are already implemented.
 
-The next step is **M0.1: establish the package, toolchain, settings, health API and first checks**.
+The next step is maintained in **PROJECT_STATE.md**. Do not restart from M0 or assume later milestones exist merely because they appear in this guide.
