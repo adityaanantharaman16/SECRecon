@@ -66,7 +66,8 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - `python scripts/service_drills.py`: actual test database outage and S3 restart recovery passed. Dependency advisory audit passed; hosted CI has not run.
 - `docker compose up -d --build` and the documented synthetic seed command pass. HTTP liveness/readiness return success (schema 0004); facts return two exact decimal assertions and source provenance. The running local stack remains offline.
 - Owner demonstration: follow README to inspect a fact and its source, then rebuild into a new generation. Duplicate delivery is expected; SQL ownership and atomic commits prevent it from duplicating financial state. Replay rebuilds derived data; a database backup preserves operational history.
-- M0 commit: `76826cf`; M1 implementation commit: `7a0cc39`; M2 commit: `68b2441`. M3 is committed separately after this validation. The real SEC fixture gate remains pending contact authorization; nothing has been published.
+- M0 commit: `76826cf`; M1 implementation commit: `7a0cc39`; M2 commit: `68b2441`; M3 commit: `d1c51a7`. The real SEC fixture gate remains pending contact authorization; nothing has been published.
+- A fresh local clone of `d1c51a7`, with new credentials and separate `secrecon-clean` volumes, also passes all 48 tests and 89.47% coverage. Exact commands are in M0 evidence. Verification containers are stopped after the check; the main `secrecon` demo remains running offline.
 - Next concrete task: record and validate the real M1 fixtures after the owner supplies an approved SEC contact address.
 
 ### 2026-09-09: design baseline
