@@ -4,6 +4,8 @@ from typing import Literal
 import typer
 import uvicorn
 
+from secrecon.commands.jobs import app as jobs_app
+from secrecon.commands.jobs import dispatch, worker
 from secrecon.config import Settings
 from secrecon.db.projections import process_source
 from secrecon.db.session import make_engine
@@ -11,6 +13,9 @@ from secrecon.domain.types import cik_text
 from secrecon.storage.archive import Archive
 
 app = typer.Typer(no_args_is_help=True)
+app.add_typer(jobs_app, name="jobs")
+app.command()(worker)
+app.command()(dispatch)
 
 
 @app.command()

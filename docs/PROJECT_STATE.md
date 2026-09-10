@@ -1,12 +1,12 @@
 # SECRecon: current project state
 
-Last updated: 2026-09-09.
+Last updated: 2026-09-10.
 
 ## Current position
 
-**Phase:** implementation. **Next milestone:** M1, immutable sources and facts.
+**Phase:** implementation. **Current milestone:** M3, incremental ingestion and offline rebuilds.
 
-M0 foundation is implemented: locked tooling, API health, migration, Compose dependencies, offline unit tests, real-service integration test and CI workflow. M1–M7 remain planned.
+M0 and M2 local gates pass. M1 code and its synthetic/real-service tests pass; the recorded SEC fixture gate awaits an approved contact address. M3 is in progress. M4–M7 remain planned.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -15,9 +15,9 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | Milestone | Status | Evidence required to close |
 | --- | --- | --- |
 | M0: foundation | Complete (local gate; hosted CI pending) | [M0 evidence](evidence/M0.md) |
-| M1: sources and facts | Not started | Preserved real fixture, provenance, duplicate test |
-| M2: durable processing | Not started | Concurrent delivery, crash recovery, retries and DLQ |
-| M3: ingestion and rebuilds | Not started | Resumable backfill and deterministic offline replay |
+| M1: sources and facts | In progress: real fixture gate pending | [M1 evidence](evidence/M1.md) |
+| M2: durable processing | Complete | [M2 evidence](evidence/M2.md) |
+| M3: ingestion and rebuilds | In progress | Resumable backfill and deterministic offline replay |
 | M4: reconciliation | Not started | Verified amendment comparison and schema evolution |
 | M5: operations | Not started | Search, protected admin actions, correlated telemetry |
 | M6: failure and performance evidence | Not started | Repeatable drills and measured report |
@@ -27,7 +27,7 @@ Allowed status values: Not started, In progress, Blocked, Complete. Link evidenc
 
 ## First implementation task
 
-Implement M0.1: Python package skeleton, locked tooling, settings validation, FastAPI health endpoint, and unit-test/lint/type-check commands. Then implement M0.2: containerized dependencies and startup checks. Follow the guide's M0 gate before M1.
+Finish and validate M3: integrate the polling/backfill/replay planner with the worker, test offline end-to-end recovery, and document operator commands. Complete the M1 real fixture gate once a contact address is authorized.
 
 Start by checking Git status, Docker daemon/Compose availability, and the chosen Python toolchain. During design, `docker.exe` was found on PATH; daemon readiness was not tested. `uv` and `python` were not found through PowerShell command discovery; installation status elsewhere is unknown. The repository had an unborn `master` branch and no commits. No branch changes, commits, or remote publication were performed during planning.
 

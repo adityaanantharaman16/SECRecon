@@ -12,7 +12,9 @@ from sqlalchemy import Engine, text
 from secrecon.config import Settings
 from secrecon.db.projections import register_source
 from secrecon.domain.types import utcnow
+from secrecon.ingestion.adapters import PARSER_VERSION
 from secrecon.ingestion.rate_limit import RateLimiter
+from secrecon.jobs.store import enqueue
 from secrecon.storage.archive import Archive, Manifest
 
 
@@ -122,6 +124,14 @@ class SecClient:
                 )
             with self.engine.begin() as connection:
                 register_source(connection, manifest)
+                if manifest.complete and 200 <= manifest.status < 300:
+                    enqueue(
+                        connection,
+                        "normalize",
+                        {"event_id": manifest.event_id, "generation": "live"},
+                        f"normalize:live:{PARSER_VERSION}:{manifest.event_id}",
+                        priority=10,
+                    )
                 connection.execute(
                     text("""
                     UPDATE fetch_attempts SET status=:status,completed_at=now(),event_id=:event

@@ -74,9 +74,23 @@ services:
       migrate: {condition: service_completed_successfully}
       redis: {condition: service_healthy}
       object-store: {condition: service_started}
+  worker:
+    <<: *app
+    command: ["secrecon", "worker"]
+    restart: unless-stopped
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
+      object-store: {condition: service_started}
+  scheduler:
+    <<: *app
+    command: ["secrecon", "dispatch"]
+    restart: unless-stopped
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      redis: {condition: service_healthy}
 
 volumes:
   postgres-data:
   redis-data:
   object-data:
-
