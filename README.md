@@ -2,7 +2,7 @@
 
 SEC filing ingestion, financial fact provenance, and amendment reconciliation, with demonstrable failure recovery.
 
-**SECRecon** is the project name. The repository folder remains SECReconcile. The foundation, source pipeline, durable workers and orchestration are implemented; see the state file for exact acceptance results. [Recorded SEC fixtures](tests/fixtures/recorded/README.md) include a verified real original/amendment pair alongside the explicitly synthetic failure examples.
+**SECRecon** is the project name. The repository folder remains SECReconcile. The foundation, source pipeline, durable workers, orchestration and snapshot-bound reconciliation are implemented; see the state file for exact acceptance results. [Recorded SEC fixtures](tests/fixtures/recorded/README.md) include a verified real original/amendment pair alongside the explicitly synthetic failure examples.
 
 Start here:
 
@@ -11,6 +11,8 @@ Start here:
 - [Agent instructions](AGENTS.md): how implementation agents should use and maintain this context.
 
 ## Start locally
+
+Want to understand the intended product first? The [interactive frontend concept](demo/README.md) uses fictional data and has a guided walkthrough. Run `py -3.13 -m http.server 8010 --bind 127.0.0.1 --directory demo`, then open http://127.0.0.1:8010. It needs no backend or Docker.
 
 Requires Docker Desktop with its Linux engine. Python is only needed to generate the local environment file; Windows has `py`, or use your existing Python installation.
 
@@ -49,6 +51,8 @@ docker compose run --rm api secrecon watchlist seed
 docker compose run --rm api secrecon jobs list
 docker compose run --rm api secrecon projection-digest
 docker compose run --rm api secrecon replay --generation replay-demo --offline
+docker compose run --rm api secrecon reconcile links --refresh
+docker compose run --rm api secrecon reconcile create 0001234567-25-000001 0001234567-25-000002
 ```
 
 Live polling starts only when `.env` explicitly sets `SECRECON_SEC_MODE=live` and an approved identifying `SECRECON_SEC_USER_AGENT` with a contact address. SEC access is off by default. Polling continues while the computer and Docker are running and catches up after restart.
