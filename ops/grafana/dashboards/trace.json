@@ -1,0 +1,52 @@
+{
+  "uid": "secrecon-trace",
+  "title": "SECRecon Trace",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": [
+    "secrecon"
+  ],
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "trace_id",
+        "label": "Trace ID",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "traces",
+      "title": "Source-to-database trace",
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 22
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "queryType": "traceql",
+          "query": "${trace_id}"
+        }
+      ],
+      "options": {}
+    }
+  ]
+}

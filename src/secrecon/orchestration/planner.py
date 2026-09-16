@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from sqlalchemy import Connection, Engine, text
 
+from secrecon.db.transactions import transaction
 from secrecon.domain.types import cik_text, utcnow
 from secrecon.ingestion.adapters import ParsedSource
 from secrecon.jobs import store
@@ -51,14 +52,14 @@ def discovery_payload(cik: str, start: date, end: date, **extra: Any) -> dict[st
 
 
 def create_backfill(
-    engine: Engine, ciks: list[str], start: date, end: date, max_jobs: int = 10000
+    engine: Engine | Connection, ciks: list[str], start: date, end: date, max_jobs: int = 10000
 ) -> str:
     if start > end or end > utcnow().date() or (end - start).days > 3653:
         raise ValueError("Backfills require valid historical bounds of at most ten years")
     if not 1 <= max_jobs <= 10000:
         raise ValueError("max_jobs must be 1-10000")
     operation = str(uuid4())
-    with engine.begin() as connection:
+    with transaction(engine) as connection:
         selected = (
             sorted({cik_text(cik) for cik in ciks})
             if ciks
@@ -300,8 +301,8 @@ def refresh_backfills(engine: Engine) -> None:
                 )
 
 
-def cancel_backfill(engine: Engine, operation: str) -> None:
-    with engine.begin() as connection:
+def cancel_backfill(engine: Engine | Connection, operation: str) -> None:
+    with transaction(engine) as connection:
         connection.execute(
             text("SELECT id FROM backfills WHERE id=:id FOR UPDATE"), {"id": operation}
         ).one()

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from redis import Redis
@@ -22,8 +23,10 @@ class Queue:
             if "BUSYGROUP" not in str(exc):
                 raise
 
-    def publish(self, job_id: str) -> Any:
-        return self.redis.xadd(self.stream, {"job_id": job_id})
+    def publish(self, job_id: str, trace_context: dict[str, str] | None = None) -> Any:
+        return self.redis.xadd(
+            self.stream, {"job_id": job_id, "trace_context": json.dumps(trace_context or {})}
+        )
 
     def ack(self, message_id: Any) -> None:
         self.redis.xack(self.stream, self.group, message_id)  # type: ignore[no-untyped-call]
@@ -48,7 +51,7 @@ class Queue:
             rows = (
                 connection.execute(
                     text("""
-                SELECT o.id,o.job_id FROM outbox o JOIN jobs j ON j.id=o.job_id
+                SELECT o.id,o.job_id,j.trace_context FROM outbox o JOIN jobs j ON j.id=o.job_id
                 WHERE o.sent_at IS NULL AND j.due_at<=clock_timestamp()
                 AND j.state IN ('queued','retry_wait')
                 ORDER BY j.priority DESC,j.due_at,o.id LIMIT 100
@@ -59,7 +62,7 @@ class Queue:
                 .all()
             )
             for row in rows:
-                self.publish(row["job_id"])
+                self.publish(row["job_id"], row["trace_context"])
                 connection.execute(
                     text("UPDATE outbox SET sent_at=now() WHERE id=:id"), {"id": row["id"]}
                 )

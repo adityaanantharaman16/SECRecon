@@ -1,0 +1,64 @@
+# Optional, entirely local. Start with --profile observability.
+services:
+  api:
+    environment:
+      SECRECON_OTLP_ENDPOINT: http://otel-collector:4318
+      SECRECON_TELEMETRY_SERVICE: secrecon-api
+  worker:
+    environment:
+      SECRECON_OTLP_ENDPOINT: http://otel-collector:4318
+      SECRECON_TELEMETRY_SERVICE: secrecon-worker
+  scheduler:
+    environment:
+      SECRECON_OTLP_ENDPOINT: http://otel-collector:4318
+      SECRECON_TELEMETRY_SERVICE: secrecon-scheduler
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1
+    profiles: [observability]
+    command: ["--config=/etc/otel.yaml"]
+    volumes: ["./ops/otel.yaml:/etc/otel.yaml:ro"]
+    mem_limit: 384m
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: 10m, max-file: "3"}}
+  prometheus:
+    image: prom/prometheus:v3.14.0@sha256:5ce7540c3c00ef4ab0c9d2c995c6a5b9c421f44b4a115d97a2c7af3b1c21cbb0
+    profiles: [observability]
+    command: ["--config.file=/etc/prometheus/prometheus.yaml", "--storage.tsdb.retention.time=7d", "--storage.tsdb.retention.size=512MB"]
+    volumes: ["./ops/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro", "./ops/alerts.yaml:/etc/prometheus/alerts.yaml:ro", "prometheus-data:/prometheus"]
+    ports: ["127.0.0.1:9090:9090"]
+    mem_limit: 512m
+    restart: unless-stopped
+  tempo-init:
+    image: python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+    profiles: [observability]
+    user: "0"
+    command: ["python", "-c", "import os; os.chown('/data',10001,10001)"]
+    volumes: ["tempo-data:/data"]
+  tempo:
+    image: grafana/tempo:3.0.3@sha256:0296560ac66f8a3600d7fb3014a52c189d4d9c3549ad6ff441bf2409855d68d5
+    profiles: [observability]
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes: ["./ops/tempo.yaml:/etc/tempo.yaml:ro", "tempo-data:/tmp/tempo"]
+    mem_limit: 512m
+    restart: unless-stopped
+    depends_on:
+      tempo-init: {condition: service_completed_successfully}
+  grafana:
+    image: grafana/grafana:13.2.2@sha256:ac461fb352abc50da10a51c7d02462e9c05488f11f53f14b3ad79a8145f638a0
+    profiles: [observability]
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_SECURITY_ADMIN_PASSWORD: ${SECRECON_ADMIN_TOKEN:?Run scripts/bootstrap.py}
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+    volumes: ["./ops/grafana/provisioning:/etc/grafana/provisioning:ro", "./ops/grafana/dashboards:/var/lib/grafana/dashboards:ro", "grafana-data:/var/lib/grafana"]
+    ports: ["127.0.0.1:3000:3000"]
+    mem_limit: 384m
+    restart: unless-stopped
+volumes:
+  prometheus-data:
+  tempo-data:
+  grafana-data:

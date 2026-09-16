@@ -1,0 +1,32 @@
+groups:
+  - name: secrecon
+    rules:
+      - alert: SECReconRunnableLag
+        expr: secrecon_oldest_runnable_seconds > 300
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Eligible work has waited over five minutes"}
+      - alert: SECReconPollStale
+        expr: (secrecon_poll_age_seconds > 1800) and on(instance) (secrecon_scheduler_enabled == 1)
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Live scheduler has not completed a company poll"}
+      - alert: SECReconNeedsAttention
+        expr: secrecon_jobs{state=~"dead_letter|quarantined"} > 0
+        labels: {severity: warning}
+        annotations: {summary: "A terminal failed job needs operator attention"}
+      - alert: SECReconDatabaseUnavailable
+        expr: up{job="secrecon"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Application metrics unavailable; check API and PostgreSQL"}
+      - alert: SECReconRedisUnavailable
+        expr: secrecon_redis_available == 0
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Redis delivery state is unavailable"}
+      - alert: SECReconArchiveFailures
+        expr: increase(secrecon_archive_failures_total[5m]) > 2
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "Repeated immutable archive write failures"}

@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy import Connection, Engine, text
 
+from secrecon.db.transactions import transaction
 from secrecon.domain import reconciliation as rules
 from secrecon.domain.types import canonical, fingerprint
 
@@ -206,7 +207,7 @@ def refresh_company(connection: Connection, generation: str, cik: str) -> None:
 
 
 def reconcile(
-    engine: Engine,
+    engine: Engine | Connection,
     original: str,
     amendment: str,
     generation: str = "active",
@@ -215,7 +216,7 @@ def reconcile(
 ) -> str:
     from secrecon.db.projections import resolve_generation
 
-    with engine.begin() as connection:
+    with transaction(engine) as connection:
         generation = resolve_generation(connection, generation)
         cik = connection.scalar(
             text("SELECT cik FROM filings WHERE generation=:g AND accession=:a"),
@@ -246,7 +247,9 @@ def reconcile(
         )
 
 
-def get_run(connection: Connection, run_id: str) -> dict[str, Any] | None:
+def get_run(
+    connection: Connection, run_id: str, *, limit: int | None = None, after: str = ""
+) -> dict[str, Any] | None:
     row = (
         connection.execute(
             text("SELECT generation,data FROM reconciliation_runs WHERE id=:id"), {"id": run_id}
@@ -256,12 +259,27 @@ def get_run(connection: Connection, run_id: str) -> dict[str, Any] | None:
     )
     if row is None:
         return None
-    changes = list(
+    if limit is not None and not 1 <= limit <= 200:
+        raise ValueError("Comparison page must contain 1-200 keys")
+    rows = list(
         connection.execute(
-            text("SELECT data FROM fact_changes WHERE run_id=:id ORDER BY key_hash"), {"id": run_id}
-        ).scalars()
+            text(
+                "SELECT key_hash,data FROM fact_changes WHERE run_id=:id AND key_hash>:after ORDER BY key_hash LIMIT :limit"
+            ),
+            {"id": run_id, "after": after, "limit": limit + 1 if limit else None},
+        ).mappings()
     )
-    return {"id": run_id, "generation": row["generation"], **row["data"], "changes": changes}
+    more = limit is not None and len(rows) > limit
+    shown = rows[:limit] if limit else rows
+    result = {
+        "id": run_id,
+        "generation": row["generation"],
+        **row["data"],
+        "changes": [r["data"] for r in shown],
+    }
+    if limit is not None:
+        result["next_cursor"] = shown[-1]["key_hash"] if more else None
+    return result
 
 
 def canonical_heads(connection: Connection, generation: str) -> dict[str, list[Any]]:

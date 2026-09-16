@@ -7,7 +7,7 @@ from typing import Protocol
 
 from botocore.exceptions import BotoCoreError, ClientError
 from redis.exceptions import RedisError
-from sqlalchemy import Connection, Engine
+from sqlalchemy import Connection, Engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from secrecon.config import Settings
@@ -17,7 +17,9 @@ from secrecon.ingestion.client import FetchError
 from secrecon.ingestion.rate_limit import AccessPaused
 from secrecon.jobs import store
 from secrecon.jobs.queue import Queue
+from secrecon.orchestration.replay import ReplayBusy
 from secrecon.storage.archive import ArchiveIntegrityError
+from secrecon.telemetry import runtime as telemetry
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +36,17 @@ class Worker:
         self.handler, self.owner = handler, owner
 
     def process(self, job_id: str, *, after_commit: Callable[[], None] | None = None) -> bool:
+        with self.engine.connect() as connection:
+            parent = connection.scalar(
+                text("SELECT trace_context FROM jobs WHERE id=:id"), {"id": job_id}
+            )
+        with telemetry.span("job.process", parent=parent, job_id=job_id):
+            telemetry.event("job_started", job_id=job_id)
+            outcome = self._process(job_id, after_commit=after_commit)
+            telemetry.event("job_delivery_finished", job_id=job_id, acknowledged=outcome)
+            return outcome
+
+    def _process(self, job_id: str, *, after_commit: Callable[[], None] | None = None) -> bool:
         lease = store.claim(self.engine, job_id, self.owner, self.settings.lease_seconds)
         if lease is None:
             return True  # SQL retains terminal, future or currently owned work.
@@ -66,6 +79,8 @@ class Worker:
                 pass
             return True
         except Exception as exc:
+            telemetry.error(type(exc).__name__)
+            telemetry.event("job_processing_failed", job_id=job_id, error_class=type(exc).__name__)
             quarantined = isinstance(exc, (SchemaError, ArchiveIntegrityError))
             retryable = isinstance(
                 exc,
@@ -77,6 +92,7 @@ class Worker:
                     OSError,
                     AccessPaused,
                     ProjectionVersionChanged,
+                    ReplayBusy,
                 ),
             )
             retry_after = 0.0
