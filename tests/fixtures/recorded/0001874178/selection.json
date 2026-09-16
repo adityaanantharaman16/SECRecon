@@ -1,0 +1,20 @@
+[
+  {
+    "accessionNumber": "0001874178-26-000054",
+    "filingDate": "2026-07-30",
+    "reportDate": "2026-06-30",
+    "acceptanceDateTime": "2026-07-30T21:00:50.000Z",
+    "act": "34",
+    "form": "10-Q",
+    "fileNumber": "001-41042",
+    "filmNumber": "261224310",
+    "items": "",
+    "core_type": "XBRL",
+    "size": 8170951,
+    "isXBRL": 1,
+    "isInlineXBRL": 1,
+    "isXBRLNumeric": 1,
+    "primaryDocument": "rivn-20260630.htm",
+    "primaryDocDescription": "10-Q"
+  }
+]

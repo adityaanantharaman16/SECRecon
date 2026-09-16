@@ -1,0 +1,32 @@
+[
+  {
+    "file": "submissions.json.gz",
+    "kind": "submissions",
+    "cik": "0001018724",
+    "accession": null,
+    "url": "https://data.sec.gov/submissions/CIK0001018724.json",
+    "fetched_at": "2026-09-16T12:26:57.460918+00:00",
+    "sha256": "e12c1f29dc9deb9202456c28d81f77602a41e190c105d6364619fc35a9ec063d",
+    "byte_length": 159857
+  },
+  {
+    "file": "facts.json.gz",
+    "kind": "facts",
+    "cik": "0001018724",
+    "accession": null,
+    "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001018724.json",
+    "fetched_at": "2026-09-16T12:26:58.718587+00:00",
+    "sha256": "7549fb68446eee40e1f50a166fa06b2d2ee6349e07c8553a4828757e032d3cd4",
+    "byte_length": 4478611
+  },
+  {
+    "file": "filing-0.html.gz",
+    "kind": "document",
+    "cik": "0001018724",
+    "accession": "0001018724-26-000026",
+    "url": "https://www.sec.gov/Archives/edgar/data/1018724/000101872426000026/amzn-20260630.htm",
+    "fetched_at": "2026-09-16T12:26:59.514768+00:00",
+    "sha256": "d07b8a88fa442c2c55bd65b3f1d336ca16e7d1e9fda831e1063d24adea60e4eb",
+    "byte_length": 1591422
+  }
+]

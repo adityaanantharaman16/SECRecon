@@ -1,0 +1,20 @@
+[
+  {
+    "accessionNumber": "0001018724-26-000026",
+    "filingDate": "2026-07-31",
+    "reportDate": "2026-06-30",
+    "acceptanceDateTime": "2026-07-30T22:11:13.000Z",
+    "act": "34",
+    "form": "10-Q",
+    "fileNumber": "001-43202",
+    "filmNumber": "261224757",
+    "items": "",
+    "core_type": "XBRL",
+    "size": 12101846,
+    "isXBRL": 1,
+    "isInlineXBRL": 1,
+    "isXBRLNumeric": 1,
+    "primaryDocument": "amzn-20260630.htm",
+    "primaryDocDescription": "10-Q"
+  }
+]

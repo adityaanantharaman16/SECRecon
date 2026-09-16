@@ -2,7 +2,7 @@
 
 SEC filing ingestion, financial fact provenance, and amendment reconciliation, with demonstrable failure recovery.
 
-**SECRecon** is the project name. The repository folder remains SECReconcile. The foundation, source pipeline, durable workers and orchestration are implemented; see the state file for exact acceptance results and the pending real SEC fixture gate.
+**SECRecon** is the project name. The repository folder remains SECReconcile. The foundation, source pipeline, durable workers and orchestration are implemented; see the state file for exact acceptance results. [Recorded SEC fixtures](tests/fixtures/recorded/README.md) include a verified real original/amendment pair alongside the explicitly synthetic failure examples.
 
 Start here:
 

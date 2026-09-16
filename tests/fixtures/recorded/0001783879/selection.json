@@ -1,0 +1,38 @@
+[
+  {
+    "accessionNumber": "0001783879-26-000023",
+    "filingDate": "2026-02-18",
+    "reportDate": "2025-12-31",
+    "acceptanceDateTime": "2026-02-18T21:05:48.000Z",
+    "act": "34",
+    "form": "10-K",
+    "fileNumber": "001-40691",
+    "filmNumber": "26648226",
+    "items": "",
+    "core_type": "XBRL",
+    "size": 17224588,
+    "isXBRL": 1,
+    "isInlineXBRL": 1,
+    "isXBRLNumeric": null,
+    "primaryDocument": "hood-20251231.htm",
+    "primaryDocDescription": "10-K"
+  },
+  {
+    "accessionNumber": "0001783879-26-000029",
+    "filingDate": "2026-02-20",
+    "reportDate": "2025-12-31",
+    "acceptanceDateTime": "2026-02-20T22:01:27.000Z",
+    "act": "34",
+    "form": "10-K/A",
+    "fileNumber": "001-40691",
+    "filmNumber": "26661053",
+    "items": "",
+    "core_type": "XBRL",
+    "size": 17183262,
+    "isXBRL": 1,
+    "isInlineXBRL": 1,
+    "isXBRLNumeric": null,
+    "primaryDocument": "hood-20251231.htm",
+    "primaryDocDescription": "10-K/A"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "file": "submissions.json.gz",
+    "kind": "submissions",
+    "cik": "0001783879",
+    "accession": null,
+    "url": "https://data.sec.gov/submissions/CIK0001783879.json",
+    "fetched_at": "2026-09-16T12:27:18.873407+00:00",
+    "sha256": "ea11b75ffe65a0c2c28e4d558e9b84af79fe2d82b13ef522e852edb7faf97e35",
+    "byte_length": 159707
+  },
+  {
+    "file": "facts.json.gz",
+    "kind": "facts",
+    "cik": "0001783879",
+    "accession": null,
+    "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001783879.json",
+    "fetched_at": "2026-09-16T12:27:19.660757+00:00",
+    "sha256": "febaef3cd85df21b8c59dedc7a2b782497ad7a062a105bffddca8f5b863a5ef1",
+    "byte_length": 1381849
+  },
+  {
+    "file": "filing-0.html.gz",
+    "kind": "document",
+    "cik": "0001783879",
+    "accession": "0001783879-26-000023",
+    "url": "https://www.sec.gov/Archives/edgar/data/1783879/000178387926000023/hood-20251231.htm",
+    "fetched_at": "2026-09-16T12:27:20.494112+00:00",
+    "sha256": "308bcc5a5d24984c42a1f0bfbb4897d1c24fd623a3df3d823d0e62cc7a5924a7",
+    "byte_length": 3298268
+  },
+  {
+    "file": "filing-1.html.gz",
+    "kind": "document",
+    "cik": "0001783879",
+    "accession": "0001783879-26-000029",
+    "url": "https://www.sec.gov/Archives/edgar/data/1783879/000178387926000029/hood-20251231.htm",
+    "fetched_at": "2026-09-16T12:27:21.315786+00:00",
+    "sha256": "50837fbd69d252fc6f80171ae4d6687b0e81ddf41365cf107bc1b7f2e380f8ba",
+    "byte_length": 3294703
+  }
+]

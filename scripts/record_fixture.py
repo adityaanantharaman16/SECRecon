@@ -13,12 +13,17 @@ import httpx
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--cik", required=True)
+parser.add_argument(
+    "--output-dir", type=Path, help="New directory; existing captures are never replaced"
+)
 args = parser.parse_args()
 cik = args.cik.zfill(10)
 user_agent = os.environ.get("SEC_FIXTURE_USER_AGENT", "")
 if "@" not in user_agent:
     raise SystemExit("Set SEC_FIXTURE_USER_AGENT to SECRecon and a real contact address")
-output = Path("tests/fixtures/recorded") / cik
+output = args.output_dir or Path("tests/fixtures/recorded") / cik
+if output.exists() and any(output.iterdir()):
+    raise SystemExit("Output directory is not empty; choose a new --output-dir to preserve history")
 output.mkdir(parents=True, exist_ok=True)
 inventory = []
 

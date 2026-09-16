@@ -1,12 +1,12 @@
 # SECRecon: current project state
 
-Last updated: 2026-09-10.
+Last updated: 2026-09-16.
 
 ## Current position
 
-**Phase:** M0–M3 implementation delivered; one M1 external acceptance gate remains pending.
+**Phase:** M0–M3 complete locally; M4 is next if requested.
 
-M0, M2 and M3 local gates pass. M1 code and its synthetic/real-service tests pass; the recorded SEC fixture gate awaits an approved contact address. M4–M7 remain planned. The full isolated suite passes 48 tests with 89.47% combined statement/branch coverage of domain and job modules. Hosted GitHub CI remains pending because no remote is configured.
+M0–M3 local gates pass, including M1's recorded SEC fixture gate. M4–M7 remain planned. The full isolated suite passes 54 tests with 89.47% combined statement/branch coverage of domain and job modules. Hosted GitHub CI remains pending because no remote is configured.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -15,7 +15,7 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | Milestone | Status | Evidence required to close |
 | --- | --- | --- |
 | M0: foundation | Complete | [M0 evidence](evidence/M0.md); hosted CI pending |
-| M1: sources and facts | In progress: real fixture gate pending | [M1 evidence](evidence/M1.md) |
+| M1: sources and facts | Complete | [M1 evidence](evidence/M1.md) |
 | M2: durable processing | Complete | [M2 evidence](evidence/M2.md) |
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
 | M4: reconciliation | Not started | Verified amendment comparison and schema evolution |
@@ -27,7 +27,7 @@ Allowed status values: Not started, In progress, Blocked, Complete. Link evidenc
 
 ## First implementation task
 
-Complete M1's recorded SEC fixture gate once the owner approves a contact address for the identifying User-Agent. Record a real original/amendment pair, retain exact response bytes/provenance, verify accessible facts manually, and add contract assertions. Then M4 is the next implementation milestone, if requested. Do not implement M4 as part of the existing M0–M3 request.
+M4.1 accession comparisons is the next implementation slice, if requested. Start with the verified Robinhood original/amendment fixtures and the synthetic changed-value pair. Do not implement M4 as part of the completed M0–M3 request. Read the recorded fixture notes before making claims about observed financial changes.
 
 Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository is initialized on `main` with milestone commits and no remote; nothing has been published. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
@@ -39,8 +39,8 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 
 ## Open decisions and risks
 
-- Five default companies: Apple, Microsoft, Alphabet, Amazon and Rivian. A usable real amendment pair and no-financial-change amendment still require recorded source verification. Synthetic fixtures are clearly identified.
-- An automated approval review rejected sending the configured Git email to SEC endpoints without destination-specific authorization. A contact-address question is pending. Do not send that email or substitute an invented contact.
+- Five default companies: Apple, Microsoft, Alphabet, Amazon and Rivian. Recorded fixtures cover Amazon, Rivian and a Robinhood original/amendment pair. Robinhood's amendment corrects formatting without changing financial results; it does not change the default watchlist. Synthetic changed-value fixtures remain clearly identified.
+- The owner explicitly approved the configured Git email as the SEC contact on 2026-09-16, resolving the earlier automatic-review blocker. It is saved in ignored `.env`; it is absent from committed fixture contents and documentation. The application remains configured offline; the bounded fixture recorder made ten authorized SEC requests.
 - SeaweedFS conditional-create and restart persistence gates pass. Local S3 credentials are administrative; immutability is application-enforced, not administrator-proof WORM.
 - Repository visibility and public hosting are undecided; neither blocks local implementation.
 - Eight weeks is a suggested sequence, not a completion promise. Reduce breadth before weakening correctness gates.
@@ -58,6 +58,18 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Architecture: [processing and replay](adr/0002-processing-and-replay.md).
 
 ## Session log
+
+### 2026-09-16: M1 recorded-source gate completed
+
+- Captured three immutable fixture bundles with ten exact decoded HTTP bodies, source URLs, UTC fetch times, SHA-256 checksums and byte lengths. Recorded the real Robinhood 10-K/10-K/A pair and independently checked year-end assets in the original document, amendment and Company Facts. See [fixture notes](../tests/fixtures/recorded/README.md).
+- Added five offline contract/recorder checks and one integration gate. Repeatedly importing the real pair preserves canonical output and both filing-document links. The recorder now refuses to overwrite a nonempty capture directory.
+- Commands: set `SEC_FIXTURE_USER_AGENT` locally from the approved Git email, then `python scripts/record_fixture.py --cik 1874178`, `--cik 1018724`, and `--cik 1783879` (three, three and four successful requests respectively). Contact values were neither printed nor committed.
+- `.venv/Scripts/python.exe scripts/check.py`: lint/format/types pass; 15 host tests pass, 39 integration tests intentionally skip without their services.
+- `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test`: **54 passed**, 89.47% coverage, two existing upstream deprecation warnings, 39.10 seconds. Ignored log: `.local/m1-real-fixture-gate.log`.
+- Docker startup encountered the known stale socket issue. Preserved the verified runtime socket directories with timestamp suffix `secrecon-recovery-20260916-083105` and restarted Docker; no images, volumes or settings were reset. Isolated test services are stopped after validation.
+- Owner demonstration: inspect the real fixture notes, follow a normalized Assets value to the original bytes, and explain why the same value belongs to two distinct filings. An amendment can correct formatting without changing financial results.
+- No database migration or application dependency change. The approved contact is stored locally while SEC mode stays offline. Work prepared on `codex/finish-m1-real-fixtures`, committed and fast-forwarded to local `main`; no remote publication.
+- Next concrete task: M4.1 when requested. Broader amendment reconciliation is not implemented by the fixture verification.
 
 ### 2026-09-10: M0–M3 implementation and local validation
 

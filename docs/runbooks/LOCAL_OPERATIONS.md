@@ -31,7 +31,7 @@ The seeded companies are Apple, Microsoft, Alphabet, Amazon and Rivian. The iden
 
 Live requests share a two-request/second Redis limiter. Only one local environment should run in live mode. A 403 sets a shared pause flag; investigate the contact header and SEC access policy before resuming. To resume after fixing the cause, remove only the pause flag with `docker compose exec redis redis-cli DEL secrecon:sec:paused`. This is an operator action, never automatic evasion.
 
-No real fixture fetch has been authorized yet. The separate `scripts/record_fixture.py` recorder requires `SEC_FIXTURE_USER_AGENT` with an approved contact; run it only while the live scheduler is off so its separate bounded request stream cannot exceed the shared budget. It records source URLs, timestamps and checksums, without committing the contact header.
+The owner authorized the configured Git email as the SEC contact on 2026-09-16. That address is saved only in ignored local configuration; the scheduler remains offline by default. The separate `scripts/record_fixture.py` recorder requires `SEC_FIXTURE_USER_AGENT` with an approved contact; run it only while the live scheduler is off so its separate bounded request stream cannot exceed the shared budget. It records source URLs, timestamps and checksums, without committing the contact header. Use `--output-dir <new-directory>` for a new snapshot; nonempty output directories are refused. See [recorded fixture notes](../../tests/fixtures/recorded/README.md) for the real source selection and manual checks.
 
 ## Ingest and backfill
 

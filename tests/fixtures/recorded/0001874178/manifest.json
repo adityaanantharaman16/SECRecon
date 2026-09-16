@@ -1,0 +1,32 @@
+[
+  {
+    "file": "submissions.json.gz",
+    "kind": "submissions",
+    "cik": "0001874178",
+    "accession": null,
+    "url": "https://data.sec.gov/submissions/CIK0001874178.json",
+    "fetched_at": "2026-09-16T12:26:19.643252+00:00",
+    "sha256": "a5cb7408c43160dfec7f933c89d28ec04bab72855dbbbf68be6cc710fa3b7052",
+    "byte_length": 85127
+  },
+  {
+    "file": "facts.json.gz",
+    "kind": "facts",
+    "cik": "0001874178",
+    "accession": null,
+    "url": "https://data.sec.gov/api/xbrl/companyfacts/CIK0001874178.json",
+    "fetched_at": "2026-09-16T12:26:20.513490+00:00",
+    "sha256": "43ea11fc419dd2c41ae0726647c54b33910d0354d64aa4a3bbb47b554be26896",
+    "byte_length": 996167
+  },
+  {
+    "file": "filing-0.html.gz",
+    "kind": "document",
+    "cik": "0001874178",
+    "accession": "0001874178-26-000054",
+    "url": "https://www.sec.gov/Archives/edgar/data/1874178/000187417826000054/rivn-20260630.htm",
+    "fetched_at": "2026-09-16T12:26:21.345869+00:00",
+    "sha256": "4fe9021f34b9a4b099e3afbb6b4c7642c2b877352f4a88c64b0753a9d4b4ba9b",
+    "byte_length": 1621956
+  }
+]
