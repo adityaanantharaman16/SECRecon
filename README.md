@@ -2,7 +2,7 @@
 
 SEC filing ingestion, financial fact provenance, and amendment reconciliation, with demonstrable failure recovery.
 
-**SECRecon** is the project name. The repository folder remains SECReconcile. The foundation, source pipeline, durable workers, orchestration and snapshot-bound reconciliation are implemented; see the state file for exact acceptance results. [Recorded SEC fixtures](tests/fixtures/recorded/README.md) include a verified real original/amendment pair alongside the explicitly synthetic failure examples.
+**SECRecon** is the project name. The repository folder remains SECReconcile. M0–M5 implement source preservation, durable workers, replay, snapshot-bound reconciliation, a connected operations UI and local observability; see the state file for exact acceptance results. [Recorded SEC fixtures](tests/fixtures/recorded/README.md) include a verified real original/amendment pair alongside the explicitly synthetic failure examples.
 
 Start here:
 
@@ -21,7 +21,9 @@ py -3.13 scripts/bootstrap.py
 docker compose up -d --build
 ```
 
-Open [API documentation](http://localhost:8000/docs) or [readiness](http://localhost:8000/health/ready). Services bind to localhost; database and storage ports stay internal unless you include `compose.dev.yaml`.
+Open the [connected workspace](http://localhost:8000), [API documentation](http://localhost:8000/docs) or [readiness](http://localhost:8000/health/ready). Services bind to localhost; database and storage ports stay internal unless you include `compose.dev.yaml`. Operator screens/actions require the generated `SECRECON_ADMIN_TOKEN` from your ignored `.env`; read-only financial screens do not.
+
+The [connected UI walkthrough](docs/runbooks/OPERATIONS_UI.md) explains each screen, authentication, API requests and the optional Grafana/Prometheus/Tempo profile. Start that profile with `docker compose -f compose.yaml -f compose.observability.yaml --profile observability up -d --build`. The static demo remains a separate concept; the connected UI preserves its navy/blue/off-white palette.
 
 Load the explicitly **synthetic** offline demonstration:
 

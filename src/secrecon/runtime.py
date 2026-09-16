@@ -18,6 +18,7 @@ from secrecon.ingestion.client import SecClient
 from secrecon.ingestion.rate_limit import RateLimiter
 from secrecon.jobs.queue import Queue
 from secrecon.storage.archive import Archive
+from secrecon.telemetry import runtime as telemetry
 
 
 @dataclass
@@ -33,6 +34,9 @@ class Services:
 @contextmanager
 def services() -> Iterator[Services]:
     settings = Settings()
+    telemetry.configure(settings.otlp_endpoint, settings.telemetry_service)
+    for handler in logging.getLogger().handlers:
+        handler.setFormatter(telemetry.JsonFormatter())
     engine = make_engine(settings)
     redis = Redis.from_url(settings.redis_url, socket_connect_timeout=3, socket_timeout=5)
     archive = Archive(settings)
@@ -45,6 +49,7 @@ def services() -> Iterator[Services]:
         client.close()
         redis.close()
         engine.dispose()
+        telemetry.current.close()
 
 
 def shutdown_event() -> threading.Event:

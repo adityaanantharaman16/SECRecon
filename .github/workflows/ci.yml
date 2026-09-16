@@ -6,6 +6,19 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  observability:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Generate isolated configuration
+        run: python3 scripts/bootstrap.py
+      - name: Validate optional Compose profile
+        run: docker compose -p secrecon-observe-test -f compose.yaml -f compose.observability.yaml --profile observability config --quiet
+      - name: Validate Collector pipelines
+        run: docker compose -p secrecon-observe-test -f compose.yaml -f compose.observability.yaml run --rm --no-deps otel-collector validate --config=/etc/otel.yaml
+      - name: Validate alert expressions and firing conditions
+        run: docker compose -p secrecon-observe-test -f compose.yaml -f compose.observability.yaml run --rm --no-deps --entrypoint promtool -v "$PWD/ops:/rules:ro" -w /rules prometheus test rules alerts.test.yaml
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -23,4 +36,3 @@ jobs:
       - name: Stop isolated test stack
         if: always()
         run: docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml down --volumes
-

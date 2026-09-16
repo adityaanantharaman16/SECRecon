@@ -258,7 +258,7 @@ Add watchlists, durable cursors, overlap, historical-page traversal, source refr
 
 ### M4 — Reconciliation and schema evolution
 
-Implementation notes and exact current interfaces: [ADR 0003](adr/0003-reconciliation-and-schema-evolution.md) and [local operations](runbooks/LOCAL_OPERATIONS.md). M4 uses CLI creation plus read-only comparison/candidate endpoints; protected web administration remains M5. The optional static frontend concept lives in `demo/` and uses fictional data only.
+Implementation notes and exact current interfaces: [ADR 0003](adr/0003-reconciliation-and-schema-evolution.md) and [local operations](runbooks/LOCAL_OPERATIONS.md). M4 introduced CLI creation and read-only comparison/candidate endpoints; M5 now adds protected web administration. The optional static frontend concept lives in `demo/` and uses fictional data only.
 
 **Slices:** M4.1 accession comparisons; M4.2 candidate linkage and coverage; M4.3 schema quarantine and versioned reprocessing.
 
@@ -277,6 +277,8 @@ Add the endpoints below, a restrained operations interface, API error contracts 
 **Gate:** deterministic cursor pagination and filters have integration coverage. Unauthorized administration fails, while valid requests create auditable jobs. One fact links to its provenance; one failed job links to attempts and a trace. Test queue and retry metrics against controlled SQL state. Simulate lag and trigger an alert condition. Telemetry backend failure must not block ingestion or grow buffers without bounds.
 
 **Owner demonstration:** locate a failed ingestion without reading every log, and explain which component caused the delay.
+
+Implemented contracts: [ADR 0004](adr/0004-operations-and-observability.md), [UI/API walkthrough](runbooks/OPERATIONS_UI.md), and [M5 evidence](evidence/M5.md). Migration 0006 preserves prior data and adds query indexes, durable operator requests, expiring sessions and trace context. Jinja2 serves the connected UI on port 8000; `demo/` remains independent. The optional `compose.observability.yaml` profile provides pinned Collector, Prometheus, Grafana and Tempo services. CI has separate application and observability jobs. Traces/logs are bounded best-effort diagnostics; SQL attempt history is authoritative. Web replay creates a candidate generation and cannot promote it.
 
 ### M6 — Failure demonstrations and performance evidence
 
@@ -441,7 +443,7 @@ A backup on the same disk protects against accidental logical damage, not disk l
 
 ## 8. Planned repository and command map
 
-The core package, migrations, fixtures, tests and CI are now implemented. The following target layout also includes later M5–M7 work; the state file identifies what exists today:
+The core package, migrations, fixtures, tests, connected UI, telemetry and CI are now implemented. The following target layout also includes later M6–M7 work; the state file identifies what exists today:
 
 ```text
 src/secrecon/

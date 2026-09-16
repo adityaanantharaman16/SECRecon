@@ -1,0 +1,28 @@
+rule_files: [alerts.yaml]
+evaluation_interval: 15s
+tests:
+  - interval: 15s
+    input_series:
+      - series: secrecon_oldest_runnable_seconds
+        values: '600+0x8'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SECReconRunnableLag
+        exp_alerts:
+          - exp_labels: {severity: warning}
+            exp_annotations: {summary: "Eligible work has waited over five minutes"}
+  - interval: 15s
+    input_series:
+      - series: secrecon_oldest_runnable_seconds
+        values: '0+0x8'
+      - series: secrecon_poll_age_seconds{instance="api"}
+        values: '3600+0x8'
+      - series: secrecon_scheduler_enabled{instance="api"}
+        values: '0+0x8'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: SECReconRunnableLag
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: SECReconPollStale
+        exp_alerts: []

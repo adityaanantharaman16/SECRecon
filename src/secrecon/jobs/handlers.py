@@ -28,6 +28,10 @@ class CoreHandlers:
 
     def __call__(self, lease: Lease) -> Callable[[Connection], None]:
         payload = lease.payload
+        if lease.kind == "operation":
+            from secrecon.orchestration.operations import prepare
+
+            return prepare(self.engine, self.archive, lease)
         if payload.get("backfill_id"):
             with self.engine.begin() as connection:
                 planner.assert_operation_active(connection, payload)

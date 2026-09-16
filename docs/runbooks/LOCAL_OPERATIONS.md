@@ -14,7 +14,7 @@ The current raw store uses an application create-only interface. A local adminis
 
 Run `docker compose run --build --rm test python scripts/seed_demo.py`. It imports fictional discovery, facts and a document. Repeating it creates additional fetch provenance but no duplicate financial assertions. Inspect `/v1/facts`, then `/v1/facts/{id}/provenance` in the OpenAPI interface.
 
-The API has read endpoints only at this stage. The richer search, protected web administration and operations UI belong to M5. Raw filing HTML is not executed by a browser-facing application endpoint. For a fictional preview of the intended interface, run `py -3.13 -m http.server 8010 --bind 127.0.0.1 --directory demo` and open http://127.0.0.1:8010. Click **Take a walkthrough**; see [demo instructions](../../demo/README.md).
+The connected UI at http://localhost:8000 supports financial search and protected operator actions. See [UI and observability instructions](OPERATIONS_UI.md) for sign-in, pagination, recovery and dashboards. Raw filing HTML is not executed by a browser-facing application endpoint. The independent fictional concept remains available with `py -3.13 -m http.server 8010 --bind 127.0.0.1 --directory demo` at http://127.0.0.1:8010; see [demo instructions](../../demo/README.md).
 
 ## Live SEC mode
 
@@ -68,7 +68,7 @@ docker compose run --rm api secrecon reconcile create 0001234567-25-000001 00012
 docker compose run --rm api secrecon reconcile show <comparison-id>
 ```
 
-The sample accessions above refer to the synthetic seed. `GET /v1/amendments` lists current candidate evidence and comparison IDs. `GET /v1/reconciliations/{id}` exposes an immutable result with coverage and source/document evidence. Creation remains a CLI operation; authenticated web administration is M5.
+The sample accessions above refer to the synthetic seed. `GET /v1/amendments` lists current candidate evidence and comparison IDs. `GET /v1/reconciliations/{id}` exposes an immutable result with coverage and source/document evidence. The CLI creates synchronously; authenticated UI/API requests queue auditable worker jobs. See the M5 runbook for idempotency and operation status contracts.
 
 By default, comparisons use the latest successfully processed Company Facts snapshot for the company. Pass `--original-event <id>` and/or `--amendment-event <id>` to select preserved snapshots explicitly, and `--generation <name>` to inspect another generation. Both accessions must be a plausible original/amendment pair. Ambiguous automatic links remain unresolved even when an explicit pair is compared.
 
@@ -101,4 +101,4 @@ The previous generation remains available for explicit API queries with `?genera
 
 Run `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test` for the full offline gate. Run `python scripts/service_drills.py` after building the test image for an actual database interruption and object-store restart.
 
-See `docs/evidence/` for completed gates. Application hosting, Grafana dashboards, broad load testing and M5–M7 features remain planned. The private repository's [GitHub Actions page](https://github.com/adityaanantharaman16/SECRecon/actions) shows hosted checks; local milestone evidence remains in the repository.
+See `docs/evidence/` for completed M0–M5 gates. Local Grafana dashboards are available through the optional observability profile. Application hosting, broad load testing and M6–M7 release/recovery evidence remain planned. The private repository's [GitHub Actions page](https://github.com/adityaanantharaman16/SECRecon/actions) shows separate application and observability checks; local milestone evidence remains in the repository.

@@ -1,0 +1,7 @@
+{
+  "package": "swagger-ui-dist",
+  "version": "5.33.0",
+  "integrity": "sha512-wpdK+m6BU5yj6pmUdMskZVTSWYG4DLglAx3sIhylloY37i8O37IrH+YEpqdXNfpaTGxILRBFzUqLF2jKqbfI7A==",
+  "source": "https://registry.npmjs.org/swagger-ui-dist/-/swagger-ui-dist-5.33.0.tgz",
+  "license": "Apache-2.0"
+}

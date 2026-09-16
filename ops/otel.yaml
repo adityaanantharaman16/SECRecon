@@ -1,0 +1,53 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: secrecon
+          scrape_interval: 15s
+          scrape_timeout: 5s
+          static_configs:
+            - targets: [api:8000]
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch:
+    timeout: 2s
+    send_batch_size: 128
+    send_batch_max_size: 256
+exporters:
+  otlp_http/tempo:
+    endpoint: http://tempo:4318
+    timeout: 2s
+    sending_queue:
+      queue_size: 256
+      num_consumers: 2
+    retry_on_failure:
+      initial_interval: 1s
+      max_interval: 5s
+      max_elapsed_time: 10s
+  prometheus:
+    endpoint: 0.0.0.0:8889
+  debug:
+    verbosity: detailed
+    sampling_initial: 10
+    sampling_thereafter: 100
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp_http/tempo]
+    metrics:
+      receivers: [prometheus, otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [debug]

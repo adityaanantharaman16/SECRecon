@@ -1,5 +1,6 @@
 """Transaction-scoped projection writes; callers own commit boundaries."""
 
+from collections.abc import Callable
 from typing import Any
 
 from sqlalchemy import Connection, Engine, text
@@ -7,6 +8,7 @@ from sqlalchemy import Connection, Engine, text
 from secrecon.domain.types import canonical
 from secrecon.ingestion.adapters import ParsedSource, SchemaError, parse
 from secrecon.storage.archive import Archive, ArchiveIntegrityError, Manifest
+from secrecon.telemetry import runtime as telemetry
 
 
 class ProjectionVersionChanged(RuntimeError):
@@ -54,9 +56,19 @@ def register_source(connection: Connection, manifest: Manifest) -> None:
         raise ArchiveIntegrityError("Source event identity conflict")
 
 
+@telemetry.traced("projection.commit")
 def apply_projection(
     connection: Connection, manifest: Manifest, parsed: ParsedSource, generation: str = "active"
 ) -> None:
+    from opentelemetry import trace
+
+    trace.get_current_span().set_attributes(
+        {
+            "source_event_id": manifest.event_id,
+            "projection_version": generation,
+            "cik": manifest.cik,
+        }
+    )
     generation = resolve_generation(connection, generation)
     if generation_parser(connection, generation) != parsed.parser_version:
         raise ProjectionVersionChanged(
@@ -219,22 +231,31 @@ def quarantine(
 
 
 def process_source(
-    engine: Engine, archive: Archive, manifest: Manifest, generation: str = "active"
+    engine: Engine,
+    archive: Archive,
+    manifest: Manifest,
+    generation: str = "active",
+    *,
+    guard: Callable[[Connection], Any] | None = None,
 ) -> ParsedSource:
-    with engine.begin() as connection:
+    from secrecon.orchestration.replay import guarded_transaction
+
+    with guarded_transaction(engine, guard) as connection:
         version = generation_parser(connection, generation)
     try:
         parsed = parse(manifest, archive.load(manifest), version)
     except (SchemaError, ArchiveIntegrityError) as exc:
-        with engine.begin() as connection:
+        with guarded_transaction(engine, guard) as connection:
             quarantine(connection, manifest, generation, exc, version)
         raise
-    with engine.begin() as connection:
+    with guarded_transaction(engine, guard) as connection:
         apply_projection(connection, manifest, parsed, generation)
     return parsed
 
 
-def fact_provenance(connection: Connection, generation: str, fact_id: str) -> dict[str, Any] | None:
+def fact_provenance(
+    connection: Connection, generation: str, fact_id: str, *, limit: int = 200, after: str = ""
+) -> dict[str, Any] | None:
     fact = (
         connection.execute(
             text("""
@@ -250,11 +271,11 @@ def fact_provenance(connection: Connection, generation: str, fact_id: str) -> di
     sources = (
         connection.execute(
             text("""
-        SELECT p.locator,p.parser_version,s.manifest
+        SELECT p.locator,p.parser_version,s.manifest,p.event_id || '/' || p.locator AS cursor
         FROM fact_provenance p JOIN source_events s USING(event_id)
-        WHERE p.generation=:gen AND p.fingerprint=:id ORDER BY s.fetched_at,s.event_id
+        WHERE p.generation=:gen AND p.fingerprint=:id AND p.event_id || '/' || p.locator > :after ORDER BY p.event_id || '/' || p.locator LIMIT :limit
     """),
-            {"gen": generation, "id": fact_id},
+            {"gen": generation, "id": fact_id, "after": after, "limit": limit + 1},
         )
         .mappings()
         .all()
@@ -264,7 +285,7 @@ def fact_provenance(connection: Connection, generation: str, fact_id: str) -> di
             text("""
         SELECT s.manifest FROM filing_sources f JOIN source_events s USING(event_id)
         WHERE f.generation=:gen AND f.accession=:acc AND f.role='document'
-        ORDER BY s.fetched_at,s.event_id
+        ORDER BY s.fetched_at,s.event_id LIMIT 201
     """),
             {"gen": generation, "acc": fact["accession"]},
         )
@@ -273,6 +294,8 @@ def fact_provenance(connection: Connection, generation: str, fact_id: str) -> di
     )
     return {
         "fact": fact["data"],
-        "sources": [dict(row) for row in sources],
-        "documents": list(documents),
+        "sources": [{k: v for k, v in row.items() if k != "cursor"} for row in sources[:limit]],
+        "next_cursor": sources[limit - 1]["cursor"] if len(sources) > limit else None,
+        "documents": list(documents[:200]),
+        "documents_truncated": len(documents) > 200,
     }

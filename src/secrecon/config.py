@@ -18,9 +18,16 @@ class Settings(BaseSettings):
     max_response_bytes: int = Field(default=50_000_000, gt=0)
     lease_seconds: int = Field(default=60, ge=3)
     heartbeat_seconds: int = Field(default=15, ge=1)
+    admin_token: SecretStr = SecretStr("")
+    cookie_secure: bool = False  # Enable with HTTPS; required runtime uses loopback HTTP.
+    otlp_endpoint: str = ""
+    telemetry_service: str = "secrecon"
+    grafana_url: str = "http://localhost:3000"
 
     @model_validator(mode="after")
     def validate_runtime(self) -> "Settings":
+        if self.admin_token.get_secret_value() and len(self.admin_token.get_secret_value()) < 32:
+            raise ValueError("Operator token must contain at least 32 characters")
         if not self.database_url.get_secret_value().startswith("postgresql+psycopg://"):
             raise ValueError("PostgreSQL with psycopg is required")
         if self.sec_mode == "live" and "@" not in self.sec_user_agent:

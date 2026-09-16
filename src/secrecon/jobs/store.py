@@ -9,7 +9,9 @@ from uuid import uuid4
 
 from sqlalchemy import Connection, Engine, text
 
+from secrecon.db.transactions import transaction
 from secrecon.domain.types import canonical, fingerprint
+from secrecon.telemetry import runtime as telemetry
 
 
 class LeaseLost(RuntimeError):
@@ -66,6 +68,7 @@ def notify(connection: Connection, job_id: str) -> None:
     )
 
 
+@telemetry.traced("job.enqueue")
 def enqueue(
     connection: Connection,
     kind: str,
@@ -80,8 +83,8 @@ def enqueue(
     digest = fingerprint({"kind": kind, "payload": payload})
     inserted = connection.scalar(
         text("""
-        INSERT INTO jobs(id,kind,payload,idempotency_key,request_hash,priority,due_at,parent_id)
-        VALUES (:id,:kind,CAST(:payload AS jsonb),:key,:hash,:priority,COALESCE(:due,now()),:parent)
+        INSERT INTO jobs(id,kind,payload,idempotency_key,request_hash,priority,due_at,parent_id,trace_context,correlation_id)
+        VALUES (:id,:kind,CAST(:payload AS jsonb),:key,:hash,:priority,COALESCE(:due,now()),:parent,CAST(:trace AS jsonb),:correlation)
         ON CONFLICT(idempotency_key) DO NOTHING RETURNING id
     """),
         {
@@ -93,6 +96,8 @@ def enqueue(
             "priority": priority,
             "due": due_at,
             "parent": parent_id,
+            "trace": canonical(telemetry.carrier()),
+            "correlation": telemetry.ids()[0],
         },
     )
     if not inserted:
@@ -130,8 +135,16 @@ def claim(engine: Engine, job_id: str, owner: str, lease_seconds: int) -> Lease 
         if row is None:
             return None
         connection.execute(
-            text("INSERT INTO job_attempts(job_id,token,owner) VALUES (:id,:token,:owner)"),
-            {"id": job_id, "token": row["token"], "owner": owner},
+            text(
+                "INSERT INTO job_attempts(job_id,token,owner,trace_id,span_id) VALUES (:id,:token,:owner,:trace,:span)"
+            ),
+            {
+                "id": job_id,
+                "token": row["token"],
+                "owner": owner,
+                "trace": telemetry.ids()[0],
+                "span": telemetry.ids()[1],
+            },
         )
         event(connection, job_id, "running", owner=owner, token=row["token"])
         return Lease(job_id, row["kind"], row["payload"], owner, row["token"])
@@ -273,8 +286,8 @@ def sweep(engine: Engine, notification_seconds: int = 30) -> int:
         return len(due)
 
 
-def redrive(engine: Engine, job_id: str) -> str:
-    with engine.begin() as connection:
+def redrive(engine: Engine | Connection, job_id: str) -> str:
+    with transaction(engine) as connection:
         row = (
             connection.execute(text("SELECT * FROM jobs WHERE id=:id FOR UPDATE"), {"id": job_id})
             .mappings()

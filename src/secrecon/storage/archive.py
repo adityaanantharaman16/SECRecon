@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from secrecon.config import Settings
 from secrecon.domain.types import canonical, utcnow
+from secrecon.telemetry import runtime as telemetry
 
 
 class ArchiveIntegrityError(ValueError):
@@ -92,6 +93,7 @@ class Archive:
         with result["Body"] as stream:
             return stream.read()
 
+    @telemetry.traced("archive.preserve")
     def preserve(
         self,
         body: bytes,
@@ -123,7 +125,7 @@ class Archive:
             blob_key=f"blobs/sha256/{digest}",
             accession=accession,
             complete=complete,
-            correlation_id=correlation_id or str(uuid4()),
+            correlation_id=correlation_id or telemetry.ids()[0],
             content_encoding=(headers or {}).get("content-encoding", "identity"),
         )
         self.put_once(
@@ -133,6 +135,16 @@ class Archive:
             f"events/{manifest.event_id}.json",
             canonical(manifest.model_dump()).encode(),
             "application/json",
+        )
+        from opentelemetry import trace
+
+        trace.get_current_span().set_attributes(
+            {
+                "source_event_id": manifest.event_id,
+                "cik": manifest.cik,
+                "accession": manifest.accession or "",
+                "correlation_id": manifest.correlation_id,
+            }
         )
         return manifest
 

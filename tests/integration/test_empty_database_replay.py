@@ -19,7 +19,7 @@ from secrecon.orchestration.replay import digest, rebuild
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.parametrize("starting_revision", ["head", "0004"])
+@pytest.mark.parametrize("starting_revision", ["head", "0004", "0005"])
 def test_archive_reconstructs_empty_database(engine, archive, generation, starting_revision):
     for filename, kind in (("submissions.json", "submissions"), ("facts.json", "facts")):
         source = archive.preserve(
@@ -53,7 +53,7 @@ def test_archive_reconstructs_empty_database(engine, archive, generation, starti
             check=True,
         )
         target = make_engine(settings.model_copy(update={"database_url": SecretStr(target_url)}))
-        if starting_revision == "0004":
+        if starting_revision in {"0004", "0005"}:
             with target.begin() as connection:
                 connection.execute(
                     text(

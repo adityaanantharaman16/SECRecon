@@ -1,5 +1,7 @@
 """Offline rebuilding from a frozen manifest inventory into isolated generations."""
 
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from sqlalchemy import Connection, Engine, text
@@ -59,6 +61,7 @@ def rebuild(
     *,
     resume: bool = False,
     parser_version: str = PARSER_VERSION,
+    guard: Callable[[Connection], Any] | None = None,
 ) -> dict[str, Any]:
     # Session lock prevents two CLI processes advancing the same replay checkpoint.
     with engine.connect() as lock:
@@ -68,10 +71,15 @@ def rebuild(
         )
         lock.commit()
         if not acquired:
-            raise ValueError("This replay generation is already being processed")
+            raise ReplayBusy("This replay generation is already being processed")
         try:
             return _rebuild(
-                engine, archive, generation, resume=resume, parser_version=parser_version
+                engine,
+                archive,
+                generation,
+                resume=resume,
+                parser_version=parser_version,
+                guard=guard,
             )
         finally:
             lock.execute(
@@ -88,12 +96,13 @@ def _rebuild(
     *,
     resume: bool = False,
     parser_version: str = PARSER_VERSION,
+    guard: Callable[[Connection], Any] | None = None,
 ) -> dict[str, Any]:
     if parser_version not in PARSER_VERSIONS:
         raise ValueError("Unsupported parser version")
     if generation in {"live", "active"} or not generation or len(generation) > 80:
         raise ValueError("Choose a new explicit generation name, not live/active")
-    with engine.begin() as connection:
+    with guarded_transaction(engine, guard) as connection:
         current_active = connection.scalar(
             text("SELECT value FROM system_state WHERE key='active_generation'")
         )
@@ -138,18 +147,18 @@ def _rebuild(
             archive.load(archive.get_manifest(event_id))
         for offset in range(position, len(ids)):
             manifest = archive.get_manifest(ids[offset])
-            with engine.begin() as connection:
+            with guarded_transaction(engine, guard) as connection:
                 register_source(connection, manifest)
             if manifest.complete and 200 <= manifest.status < 300:
-                process_source(engine, archive, manifest, generation)
-            with engine.begin() as connection:
+                process_source(engine, archive, manifest, generation, guard=guard)
+            with guarded_transaction(engine, guard) as connection:
                 connection.execute(
                     text(
                         "UPDATE replays SET position=:position,state='running',error=NULL WHERE generation=:g"
                     ),
                     {"position": offset + 1, "g": generation},
                 )
-        with engine.begin() as connection:
+        with guarded_transaction(engine, guard) as connection:
             result = digest(connection, generation)
             connection.execute(
                 text("""
@@ -163,7 +172,7 @@ def _rebuild(
             )
             return result
     except Exception as exc:
-        with engine.begin() as connection:
+        with guarded_transaction(engine, guard) as connection:
             connection.execute(
                 text("UPDATE replays SET state='failed',error=:error WHERE generation=:g"),
                 {"g": generation, "error": type(exc).__name__ + ": " + str(exc)[:500]},
@@ -221,3 +230,19 @@ def promote(engine: Engine, generation: str, expected_digest: str, *, archive: A
             text("UPDATE system_state SET value=:g WHERE key='active_generation'"),
             {"g": generation},
         )
+
+
+class ReplayBusy(RuntimeError):
+    pass
+
+
+@contextmanager
+def guarded_transaction(
+    engine: Engine, guard: Callable[[Connection], Any] | None
+) -> Iterator[Connection]:
+    with engine.begin() as connection:
+        if guard:
+            guard(connection)
+        yield connection
+        if guard:
+            guard(connection)

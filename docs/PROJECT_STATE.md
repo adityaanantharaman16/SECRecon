@@ -4,9 +4,9 @@ Last updated: 2026-09-16.
 
 ## Current position
 
-**Phase:** M0–M4 complete; M5 is next if requested.
+**Phase:** M0–M5 complete; M6 is next if requested.
 
-M0–M4 local gates pass, including real recorded-source reconciliation and schema evolution. M5–M7 remain planned. The full isolated suite passes **79 tests** with **90.75%** combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). The hosted CI capacity failure is fixed and verified; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest commit's result.
+M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6–M7 remain planned. The full isolated suite passes **94 tests** with **91.18%** combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI now has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest commit's result.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -19,7 +19,7 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | M2: durable processing | Complete | [M2 evidence](evidence/M2.md) |
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
 | M4: reconciliation | Complete | [M4 evidence](evidence/M4.md); 79 tests pass |
-| M5: operations | Not started | Search, protected admin actions, correlated telemetry |
+| M5: operations | Complete | [M5 evidence](evidence/M5.md); 94 tests, tracing smoke and alert gates |
 | M6: failure and performance evidence | Not started | Repeatable drills and measured report |
 | M7: release and handoff | Not started | Local release, restore, rollback and case study |
 
@@ -27,7 +27,7 @@ Allowed status values: Not started, In progress, Blocked, Complete. Link evidenc
 
 ## First implementation task
 
-M5.1 is next, if requested: implement indexed query filters, deterministic cursor pagination and API error contracts with integration coverage. Read ADR 0003 before changing comparison semantics. M4 comparisons, candidate linkage and schema replay already exist; do not rebuild them. The static `demo/` is a fictional product concept, not a connected UI or completion of M5.
+M6.1 is next, if requested: build a repeatable fixture-driven failure harness that selects an isolated Compose project, records before/after SQL invariants, timings and trace IDs, and refuses the development/release project. Start from existing crash/dependency tests and `scripts/service_drills.py`; do not rebuild working M2–M5 mechanisms. Read ADRs 0002–0004 before changing job ownership, comparison or telemetry semantics. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
 
 Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
@@ -44,7 +44,7 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - SeaweedFS conditional-create and restart persistence gates pass. Local S3 credentials are administrative; immutability is application-enforced, not administrator-proof WORM.
 - The owner authorized private GitHub publication on 2026-09-16. Public visibility and application hosting are not requested; the required runtime remains local and free.
 - Eight weeks is a suggested sequence, not a completion promise. Reduce breadth before weakening correctness gates.
-- Read-only API endpoints and CLI administration are implemented; richer search, authentication, UI and telemetry are M5. Load baselines and release/backup automation are M6/M7.
+- Indexed search, authenticated asynchronous administration, connected UI and local telemetry are implemented. Load baselines and release/backup automation remain M6/M7. The local UI is not an Internet-ready multi-user service; Grafana is a loopback-only Viewer and telemetry has finite retention.
 - Backfill date ranges bound document discovery/fetching. Full captured Company Facts responses retain all supported aggregate observations. See ADR 0002.
 
 ## Current commands and evidence
@@ -53,14 +53,30 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Synthetic demo: `docker compose run --build --rm test python scripts/seed_demo.py`.
 - Full gate: `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test`.
 - Actual dependency drill: `python scripts/service_drills.py` (only the test project).
-- API: `http://localhost:8000/docs`; facts and provenance are available.
+- Connected UI: `http://localhost:8000`; operator controls require `SECRECON_ADMIN_TOKEN` from ignored `.env`. API docs: `http://localhost:8000/docs`, with local assets and bearer authorization.
+- Optional diagnostics: `docker compose -f compose.yaml -f compose.observability.yaml --profile observability up -d --build`; Grafana at `http://localhost:3000`, Prometheus at `http://localhost:9090`.
 - Reconciliation: `docker compose exec api secrecon reconcile links --refresh` for existing pre-M4 data, then `GET /v1/amendments` and `GET /v1/reconciliations/{id}`. New projections update comparisons automatically.
 - Frontend concept: `py -3.13 -m http.server 8010 --bind 127.0.0.1 --directory demo`, then open `http://127.0.0.1:8010` and select **Take a walkthrough**. See [demo guide](../demo/README.md).
 - Runbook: [local operations](runbooks/LOCAL_OPERATIONS.md).
 - Architecture: [processing and replay](adr/0002-processing-and-replay.md).
 - M4 contracts: [reconciliation and schema evolution](adr/0003-reconciliation-and-schema-evolution.md).
+- M5 contracts: [operations and observability](adr/0004-operations-and-observability.md), [connected UI walkthrough](runbooks/OPERATIONS_UI.md).
 
 ## Session log
+
+### 2026-09-16: M5 connected operations and observability
+
+- Implemented allowlisted/indexed search, generation-pinned keyset pagination, bounded provenance/comparison traversal and sanitized API errors. Migration 0006 retains existing data and adds query indexes, operator requests/sessions and job trace context; populated upgrade tests cover 0004 and 0005.
+- Added bearer administration and expiring, hashed browser sessions with CSRF/origin checks. Operator requests commit audit/job/outbox atomically and return durable operation IDs. Worker effects use fenced ownership; replay writes reject expired workers and create fresh candidate generations without web promotion.
+- Connected the navy/blue/off-white UI to real local state: company/filing/fact searches, comparison/provenance, source inventory, job attempts, quarantine and recovery. The original demo remains a design concept; the palette is preserved, not a frozen screen specification. Vendored integrity-verified Swagger assets keep documentation offline.
+- Added OpenTelemetry spans, JSON logs, bounded export queues, trace context on attempts, SQL-derived metrics and a pinned optional Collector/Prometheus/Grafana/Tempo profile. A separate observability CI job validates configuration and alert firing. Failed telemetry cannot replace or block durable SQL audit.
+- Full gate: `docker compose -p secrecon-m5-final -f compose.yaml -f compose.test.yaml run --build --rm test` — **94 passed**, **91.18%** domain/job coverage, 202.49 seconds; Ruff, format and strict mypy passed. Two existing upstream deprecation warnings remain. Final focused API/telemetry audit is recorded in `.local/m5-audit-gate.log`; source search includes aggregate filing evidence as well as document manifests.
+- Collector validation and Promtool alert tests passed. Locked Python dependencies exported with `uv export --frozen --no-emit-project` and checked with `pip-audit --no-deps --disable-pip`: no known vulnerabilities found. JavaScript syntax passed. Browser checks verified desktop/mobile views, comparison → provenance → source, sign-in boundary and local Swagger without console errors.
+- Took `.local/backups/secrecon-pre-m5.dump`, upgraded the development database to 0006, and started the local observability profile. The mock-fetch smoke exported trace `a93487f3e70dab694092f17f4d6a61a0` through Collector to Tempo; Grafana's datasource returned fetch, archive, enqueue, worker and projection spans. Prometheus returned the live SQL runnable metric. The smoke appends explicitly synthetic events; no new SEC requests occurred.
+- Audit corrected Collector retry bounds, Tempo volume ownership, error status on caught worker failures, provenance generation selection and aggregate source lookup. Operational logs/traces remain best-effort diagnostics with bounded queues/retention; SQL and raw archives retain authoritative history. Alert notifications and sustained throughput claims are out of scope.
+- Work branch: `feat/m5-operations`. Publish through a reviewed PR and require both hosted jobs before merging. Consult GitHub Actions for final hosted status; local acceptance evidence is [M5](evidence/M5.md).
+- Owner demonstration: find a comparison, follow its value to immutable evidence, inspect a failed attempt and trace, then submit an idempotent recovery job. The engineering concepts are provenance, durable intent, fenced effects and observability that cannot compromise processing.
+- Next concrete task: M6.1 isolated failure harness, only when requested; then measured performance baselines and a recovery report.
 
 ### 2026-09-16: CI repair, M4 completion and product demo
 

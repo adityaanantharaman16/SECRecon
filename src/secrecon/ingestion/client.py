@@ -16,6 +16,7 @@ from secrecon.ingestion.adapters import PARSER_VERSION
 from secrecon.ingestion.rate_limit import RateLimiter
 from secrecon.jobs.store import enqueue
 from secrecon.storage.archive import Archive, Manifest
+from secrecon.telemetry import runtime as telemetry
 
 
 class FetchError(RuntimeError):
@@ -73,6 +74,7 @@ class SecClient:
     def close(self) -> None:
         self.http.close()
 
+    @telemetry.traced("source.fetch")
     def fetch(
         self,
         url: str,
