@@ -387,7 +387,7 @@ Initial alerts: oldest runnable job over five minutes, no successful poll for 30
 
 ### Git conventions
 
-M0 establishes `main` as the default branch when the initial repository history is created; the design session found an empty `master` branch. Keep one short-lived branch per slice, e.g. `codex/m2-worker-fencing`. Use PRs, squash merge, and descriptive commits such as `feat(worker): reject expired lease commits` or `test(replay): verify snapshot ordering`.
+M0 establishes `main` as the default branch when the initial repository history is created; the design session found an empty `master` branch. Keep one short-lived branch per slice, e.g. `feat/m2-worker-fencing`. Per the owner's preference, branch names must exclude `codex`; use descriptive `feat/`, `fix/`, `test/` or `docs/` prefixes. Use PRs, squash merge, and descriptive commits such as `feat(worker): reject expired lease commits` or `test(replay): verify snapshot ordering`.
 
 Link PRs to milestone/slice IDs. PR descriptions state the problem and resulting behavior, tests, migration impact and material risks. Keep migrations in the same PR as the code that needs them. Record architecture decisions under `docs/adr/NNNN-title.md`: context, decision, alternatives, consequences and validation.
 

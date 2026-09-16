@@ -6,7 +6,7 @@ Last updated: 2026-09-16.
 
 **Phase:** M0–M3 complete locally; M4 is next if requested.
 
-M0–M3 local gates pass, including M1's recorded SEC fixture gate. M4–M7 remain planned. The full isolated suite passes 54 tests with 89.47% combined statement/branch coverage of domain and job modules. Hosted GitHub CI remains pending because no remote is configured.
+M0–M3 local gates pass, including M1's recorded SEC fixture gate. M4–M7 remain planned. The full isolated suite passes 54 tests with 89.47% combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). Hosted CI is configured to run on pushes and pull requests; check GitHub Actions for the latest hosted result.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -29,7 +29,7 @@ Allowed status values: Not started, In progress, Blocked, Complete. Link evidenc
 
 M4.1 accession comparisons is the next implementation slice, if requested. Start with the verified Robinhood original/amendment fixtures and the synthetic changed-value pair. Do not implement M4 as part of the completed M0–M3 request. Read the recorded fixture notes before making claims about observed financial changes.
 
-Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository is initialized on `main` with milestone commits and no remote; nothing has been published. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
+Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
 ## Settled design defaults
 
@@ -42,7 +42,7 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Five default companies: Apple, Microsoft, Alphabet, Amazon and Rivian. Recorded fixtures cover Amazon, Rivian and a Robinhood original/amendment pair. Robinhood's amendment corrects formatting without changing financial results; it does not change the default watchlist. Synthetic changed-value fixtures remain clearly identified.
 - The owner explicitly approved the configured Git email as the SEC contact on 2026-09-16, resolving the earlier automatic-review blocker. It is saved in ignored `.env`; it is absent from committed fixture contents and documentation. The application remains configured offline; the bounded fixture recorder made ten authorized SEC requests.
 - SeaweedFS conditional-create and restart persistence gates pass. Local S3 credentials are administrative; immutability is application-enforced, not administrator-proof WORM.
-- Repository visibility and public hosting are undecided; neither blocks local implementation.
+- The owner authorized private GitHub publication on 2026-09-16. Public visibility and application hosting are not requested; the required runtime remains local and free.
 - Eight weeks is a suggested sequence, not a completion promise. Reduce breadth before weakening correctness gates.
 - Read-only API endpoints and CLI administration are implemented; richer search, authentication, UI and telemetry are M5. Load baselines and release/backup automation are M6/M7.
 - Backfill date ranges bound document discovery/fetching. Full captured Company Facts responses retain all supported aggregate observations. See ADR 0002.
@@ -58,6 +58,14 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Architecture: [processing and replay](adr/0002-processing-and-replay.md).
 
 ## Session log
+
+### 2026-09-16: private GitHub publication and branch naming
+
+- Created the owner-authorized private repository `adityaanantharaman16/SECRecon`, connected `origin`, and prepared the existing milestone history for its initial push. Local configuration and credentials remain ignored.
+- Renamed the existing feature branch to `feat/finish-m1-real-fixtures`. Updated AGENTS.md, the guide and ADR 0002 so future branch names exclude `codex`, as requested.
+- Checks: clean initial working tree, no existing remote, GitHub authenticated-owner lookup, private repository creation response, ignored configuration/helper paths, and `git diff --check`. No runtime code changed, so the passing 54-test milestone gate was not repeated.
+- The owner can find and clone the project on GitHub. Git preserves the implementation history; GitHub now provides remote storage and the configured Actions workflow. No application deployment is included.
+- Next concrete task: verify the initial push/hosted CI result, then M4.1 when requested.
 
 ### 2026-09-16: M1 recorded-source gate completed
 

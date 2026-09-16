@@ -53,4 +53,4 @@ docker compose run --rm api secrecon replay --generation replay-demo --offline
 
 Live polling starts only when `.env` explicitly sets `SECRECON_SEC_MODE=live` and an approved identifying `SECRECON_SEC_USER_AGENT` with a contact address. SEC access is off by default. Polling continues while the computer and Docker are running and catches up after restart.
 
-Read the [operations runbook](docs/runbooks/LOCAL_OPERATIONS.md) for backfills, replay promotion, retries and limitations. No paid hosting, cloud account or GitHub remote is required. Hosted CI remains pending until a remote is configured.
+Read the [operations runbook](docs/runbooks/LOCAL_OPERATIONS.md) for backfills, replay promotion, retries and limitations. The runtime requires no paid hosting or cloud account. The private repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon); [GitHub Actions](https://github.com/adityaanantharaman16/SECRecon/actions) runs the configured CI gate on pushes and pull requests.

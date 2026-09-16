@@ -16,4 +16,4 @@ Replay uses a fixed list of manifests, a fixed parser version and an isolated ge
 
 Operational history is restored from database backups, not invented from raw SEC data. An integration test creates a physically empty PostgreSQL database, migrates it, restores facts/provenance from the archive and confirms there are no fabricated jobs.
 
-Initial milestone commits are on the new local `main` branch. Subsequent collaborative work should use the guide's short-lived `codex/` branches and reviewed PRs once a remote is configured.
+Initial milestone commits are on the new local `main` branch. Subsequent collaborative work should use the guide's short-lived descriptive branches (for example, `feat/m4-reconciliation`) and reviewed PRs once a remote is configured. The owner's project-specific preference excludes `codex` from branch names.

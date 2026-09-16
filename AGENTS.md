@@ -10,3 +10,4 @@ Read `docs/PROJECT_STATE.md`, then the relevant sections of `docs/PROJECT_GUIDE.
 - At the end of each implementation session, update `docs/PROJECT_STATE.md` with changes, commands and outcomes, limitations, and the next concrete task. Explain what the owner can now demonstrate and the engineering concept involved.
 - Record material architecture changes in `docs/adr/` and update the guide. Respect explicit user changes to these defaults.
 - Inspect the current working tree before editing. Preserve unrelated work. Do not treat this document as authorization to publish the repository or provision paid services.
+- Branch names for this project must exclude `codex`. Use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/` (for example, `feat/m4-reconciliation`).

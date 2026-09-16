@@ -77,4 +77,4 @@ The previous generation remains available for explicit API queries with `?genera
 
 Run `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test` for the full offline gate. Run `python scripts/service_drills.py` after building the test image for an actual database interruption and object-store restart.
 
-See `docs/evidence/` for completed gates. Cloud publishing, Grafana dashboards, broad load testing and M4–M7 features remain outside M0–M3. GitHub Actions is configured but has no hosted execution evidence until a remote exists.
+See `docs/evidence/` for completed gates. Application hosting, Grafana dashboards, broad load testing and M4–M7 features remain outside M0–M3. The private repository's [GitHub Actions page](https://github.com/adityaanantharaman16/SECRecon/actions) shows hosted checks; local milestone evidence remains in the repository.
