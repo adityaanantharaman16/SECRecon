@@ -61,11 +61,12 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 
 ### 2026-09-16: private GitHub publication and branch naming
 
-- Created the owner-authorized private repository `adityaanantharaman16/SECRecon`, connected `origin`, and prepared the existing milestone history for its initial push. Local configuration and credentials remain ignored.
+- Created the owner-authorized private repository `adityaanantharaman16/SECRecon`, connected `origin`, and pushed the complete milestone history to `main`. GitHub's main commit was verified as `a98b2bf`, matching the initial local publication commit. Local configuration and credentials remain ignored.
 - Renamed the existing feature branch to `feat/finish-m1-real-fixtures`. Updated AGENTS.md, the guide and ADR 0002 so future branch names exclude `codex`, as requested.
 - Checks: clean initial working tree, no existing remote, GitHub authenticated-owner lookup, private repository creation response, ignored configuration/helper paths, and `git diff --check`. No runtime code changed, so the passing 54-test milestone gate was not repeated.
 - The owner can find and clone the project on GitHub. Git preserves the implementation history; GitHub now provides remote storage and the configured Actions workflow. No application deployment is included.
-- Next concrete task: verify the initial push/hosted CI result, then M4.1 when requested.
+- Hosted CI started successfully: [initial run](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35097098499), observed in progress after the initial push. This records dispatch, not a passing result. Subsequent pushes trigger new checks; use the Actions page for the latest status.
+- Next concrete task: inspect the latest hosted CI result, then M4.1 when requested.
 
 ### 2026-09-16: M1 recorded-source gate completed
 
