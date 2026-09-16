@@ -64,7 +64,7 @@ To record a real local trace without contacting SEC:
 docker compose -f compose.yaml -f compose.observability.yaml run --build --rm -e SECRECON_OTLP_ENDPOINT=http://otel-collector:4318 -e SECRECON_TELEMETRY_SERVICE=secrecon-smoke test python scripts/observability_smoke.py
 ```
 
-This appends clearly synthetic fixture events to the local archive and processes them. It prints job IDs and the trace ID, never credentials. Open the job or paste the trace ID into Grafana Explore's Tempo datasource. Expect `source.fetch`, `archive.preserve`, `job.enqueue`, `job.process`, and `projection.commit` spans. Failed worker attempts also carry error traces; older pre-M5 attempts may not.
+This appends clearly synthetic fixture events to the local archive and processes them. It prints job IDs and the trace ID, never credentials. Open the job trace link or paste the trace ID into the **SECRecon Trace** dashboard at <http://localhost:3000/d/secrecon-trace/secrecon-trace>. This viewer-compatible dashboard does not require Explore access. Expect `source.fetch`, `archive.preserve`, `job.enqueue`, `job.process`, and `projection.commit` spans. Failed worker attempts also carry error traces; older pre-M5 attempts may not.
 
 SQL audit survives telemetry failure. Span/log queues are bounded at 256 per signal/process, exports time out, and drops/failures become metrics when export is available again. Collector logs are sampled/rotated and traces have finite retention; they are not an audit backup. The profile has no notification service: alert state is visible in Prometheus. No-traffic/offline states and a switched-off laptop cannot be interpreted as healthy continuous ingestion.
 
