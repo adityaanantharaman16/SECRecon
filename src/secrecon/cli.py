@@ -5,6 +5,7 @@ import typer
 import uvicorn
 
 from secrecon.commands import ingestion as ingestion_commands
+from secrecon.commands import reconciliation as reconciliation_commands
 from secrecon.commands.jobs import app as jobs_app
 from secrecon.commands.jobs import dispatch, worker
 from secrecon.config import Settings
@@ -15,6 +16,9 @@ from secrecon.storage.archive import Archive
 
 app = typer.Typer(no_args_is_help=True)
 app.add_typer(jobs_app, name="jobs")
+app.add_typer(reconciliation_commands.app, name="reconcile")
+app.command()(reconciliation_commands.generation_diff)
+app.command()(reconciliation_commands.quarantine_list)
 app.command()(worker)
 app.command()(dispatch)
 app.add_typer(ingestion_commands.watchlist_app, name="watchlist")

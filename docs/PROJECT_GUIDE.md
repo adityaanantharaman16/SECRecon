@@ -1,6 +1,6 @@
 # SECRecon: implementation and milestone guide
 
-Design baseline: 2026-09-09; implementation update: 2026-09-10. Project name: SECRecon. This is the living implementation contract. Check [PROJECT_STATE.md](PROJECT_STATE.md) for passed gates, pending acceptance work and the next task; future milestones are not claims of implemented functionality.
+Design baseline: 2026-09-09; implementation update: 2026-09-16. Project name: SECRecon. This is the living implementation contract. Check [PROJECT_STATE.md](PROJECT_STATE.md) for passed gates, pending acceptance work and the next task; future milestones are not claims of implemented functionality.
 
 Quick navigation: [scope](#1-what-we-are-building) · [stack and Docker](#2-technical-stack-and-local-deployment) · [correctness contracts](#3-correctness-contracts) · [milestones](#4-milestones-and-acceptance-gates) · [API](#5-api-and-operator-contracts) · [testing and failure drills](#6-testing-gates-and-measurable-reliability) · [Git and CI/CD](#7-git-and-cicd-workflow) · [repository and commands](#8-planned-repository-and-command-map) · [session workflow](#9-working-together-without-losing-understanding).
 
@@ -258,6 +258,8 @@ Add watchlists, durable cursors, overlap, historical-page traversal, source refr
 
 ### M4 — Reconciliation and schema evolution
 
+Implementation notes and exact current interfaces: [ADR 0003](adr/0003-reconciliation-and-schema-evolution.md) and [local operations](runbooks/LOCAL_OPERATIONS.md). M4 uses CLI creation plus read-only comparison/candidate endpoints; protected web administration remains M5. The optional static frontend concept lives in `demo/` and uses fictional data only.
+
 **Slices:** M4.1 accession comparisons; M4.2 candidate linkage and coverage; M4.3 schema quarantine and versioned reprocessing.
 
 Implement immutable comparison runs and inspectable results. Cover unchanged, changed, original-only, amendment-only and ambiguous assertions. Preserve source-snapshot revisions separately from amendments. Add adapter versioning and structured schema diagnostics.
@@ -439,7 +441,7 @@ A backup on the same disk protects against accidental logical damage, not disk l
 
 ## 8. Planned repository and command map
 
-The core package, migrations, fixtures, tests and CI are now implemented. The following target layout also includes later M4–M7 work; the state file identifies what exists today:
+The core package, migrations, fixtures, tests and CI are now implemented. The following target layout also includes later M5–M7 work; the state file identifies what exists today:
 
 ```text
 src/secrecon/

@@ -12,14 +12,15 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
 from secrecon.config import Settings
-from secrecon.db.projections import process_source
+from secrecon.db.projections import process_source, register_source
 from secrecon.db.session import make_engine
 from secrecon.orchestration.replay import digest, rebuild
 
 pytestmark = pytest.mark.integration
 
 
-def test_archive_reconstructs_empty_database(engine, archive, generation):
+@pytest.mark.parametrize("starting_revision", ["head", "0004"])
+def test_archive_reconstructs_empty_database(engine, archive, generation, starting_revision):
     for filename, kind in (("submissions.json", "submissions"), ("facts.json", "facts")):
         source = archive.preserve(
             (Path(__file__).parents[1] / "fixtures/synthetic" / filename).read_bytes(),
@@ -47,9 +48,61 @@ def test_archive_reconstructs_empty_database(engine, archive, generation):
             "SECRECON_SEC_MODE": "offline",
         }
         subprocess.run(
-            [sys.executable, "-m", "alembic", "upgrade", "head"], env=environment, check=True
+            [sys.executable, "-m", "alembic", "upgrade", starting_revision],
+            env=environment,
+            check=True,
         )
         target = make_engine(settings.model_copy(update={"database_url": SecretStr(target_url)}))
+        if starting_revision == "0004":
+            with target.begin() as connection:
+                connection.execute(
+                    text(
+                        "INSERT INTO generations(name,parser_version) VALUES ('legacy-replay','sec-json-v1')"
+                    )
+                )
+                connection.execute(
+                    text(
+                        "INSERT INTO replays(generation,parser_version,event_ids,state) VALUES ('legacy-replay','sec-json-v1','[]','ready')"
+                    )
+                )
+                register_source(connection, source)
+                connection.execute(
+                    text("""
+                    INSERT INTO facts VALUES ('live','legacy','0001234567','0001234567-25-000001','Assets',123.45,'{"value":"123.45"}')
+                """)
+                )
+                connection.execute(
+                    text(
+                        "INSERT INTO quarantine_records(generation,event_id,parser_version,reason) VALUES ('live',:id,'sec-json-v1','legacy rejection')"
+                    ),
+                    {"id": source.event_id},
+                )
+            subprocess.run(
+                [sys.executable, "-m", "alembic", "upgrade", "head"], env=environment, check=True
+            )
+            with target.connect() as connection:
+                assert (
+                    connection.scalar(
+                        text(
+                            "SELECT comparison_version FROM replays WHERE generation='legacy-replay'"
+                        )
+                    )
+                    == "legacy-no-reconciliation"
+                )
+                assert (
+                    str(
+                        connection.scalar(
+                            text("SELECT value FROM facts WHERE fingerprint='legacy'")
+                        )
+                    )
+                    == "123.45"
+                )
+                assert (
+                    connection.scalar(
+                        text("SELECT diagnostics FROM quarantine_records WHERE generation='live'")
+                    )
+                    == []
+                )
         result = rebuild(target, archive, "restored")
         assert result == expected
         with target.connect() as connection:

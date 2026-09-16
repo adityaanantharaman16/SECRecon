@@ -6,6 +6,7 @@ from sqlalchemy import text
 from test_jobs import enqueue, make_queue
 
 from secrecon.config import Settings
+from secrecon.db.projections import ProjectionVersionChanged
 from secrecon.ingestion.adapters import SchemaError
 from secrecon.ingestion.client import FetchError
 from secrecon.jobs import store
@@ -21,6 +22,7 @@ pytestmark = pytest.mark.integration
         (FetchError("upstream unavailable", retryable=True, retry_after=120), "retry_wait"),
         (ValueError("unsupported input"), "dead_letter"),
         (OSError("temporary dependency failure"), "retry_wait"),
+        (ProjectionVersionChanged("active parser advanced"), "retry_wait"),
     ],
 )
 def test_worker_records_classified_failures(engine, error, state):

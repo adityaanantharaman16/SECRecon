@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SECRecon · Product demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="#overview"
+        ><span class="mark">S<span>R</span></span> SECRecon<span
+          class="brand-dot"
+        ></span
+      ></a>
+      <div class="workspace">
+        <span class="workspace-icon">S</span>
+        <div>Research workspace<small>Local environment</small></div>
+        <span class="chevron">⌄</span>
+      </div>
+      <p class="nav-label">WORKSPACE</p>
+      <nav aria-label="Main navigation">
+        <a href="#overview" data-nav="overview"><span>◫</span>Overview</a>
+        <a href="#filings" data-nav="filings"
+          ><span>▤</span>Filings<span class="nav-count">6</span></a
+        >
+        <a href="#comparisons" data-nav="comparisons"
+          ><span>⇄</span>Reconciliation</a
+        >
+        <a href="#jobs" data-nav="jobs"
+          ><span>☷</span>Processing jobs<span class="nav-alert">1</span></a
+        >
+        <a href="#archive" data-nav="archive"><span>▱</span>Source archive</a>
+        <a href="#replay" data-nav="replay"><span>↺</span>Replay & recovery</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="local-status"><i></i> Sample environment</div>
+        <p>Every value has a source.<br />Every change has a history.</p>
+        <div class="profile">
+          <span>AD</span>
+          <div>Project owner<small>Demo access</small></div>
+        </div>
+      </div>
+    </aside>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <span class="crumb">Workspace</span><span class="slash">/</span
+          ><span id="breadcrumb">Overview</span>
+        </div>
+        <div class="top-actions">
+          <span class="demo-pill">INTERACTIVE DEMO</span
+          ><button class="button subtle" id="tour-start">
+            Take a walkthrough <span>↗</span>
+          </button>
+        </div>
+      </header>
+      <div class="demo-banner">
+        <span class="banner-icon">i</span
+        ><span
+          ><strong>Explore the finished-product concept.</strong> All companies,
+          values and actions below are fictional. Nothing here contacts SEC or
+          changes your database.</span
+        ><button id="reset" class="text-button">Reset demo</button>
+      </div>
+      <main id="content" tabindex="-1"></main>
+      <footer>
+        SECRecon <span>Source → assertion → explanation</span
+        ><span
+          >Concept preview · Backend milestones are tracked separately</span
+        >
+      </footer>
+    </div>
+    <dialog id="source-dialog" aria-labelledby="source-title">
+      <div id="source-content"></div>
+    </dialog>
+    <section id="tour" class="tour-card" hidden aria-label="Guided walkthrough">
+      <div class="tour-top">
+        <span id="tour-position"></span
+        ><button id="tour-close" aria-label="Close walkthrough">×</button>
+      </div>
+      <h2 id="tour-title"></h2>
+      <p id="tour-description"></p>
+      <div class="tour-controls">
+        <button id="tour-back" class="button subtle">Back</button
+        ><button id="tour-next" class="button primary">Next →</button>
+      </div>
+    </section>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

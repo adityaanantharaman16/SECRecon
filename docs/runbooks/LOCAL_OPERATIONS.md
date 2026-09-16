@@ -14,7 +14,7 @@ The current raw store uses an application create-only interface. A local adminis
 
 Run `docker compose run --build --rm test python scripts/seed_demo.py`. It imports fictional discovery, facts and a document. Repeating it creates additional fetch provenance but no duplicate financial assertions. Inspect `/v1/facts`, then `/v1/facts/{id}/provenance` in the OpenAPI interface.
 
-The API has read endpoints only at this stage. The richer search, protected web administration and operations UI belong to M5. Raw filing HTML is not executed by a browser-facing application endpoint.
+The API has read endpoints only at this stage. The richer search, protected web administration and operations UI belong to M5. Raw filing HTML is not executed by a browser-facing application endpoint. For a fictional preview of the intended interface, run `py -3.13 -m http.server 8010 --bind 127.0.0.1 --directory demo` and open http://127.0.0.1:8010. Click **Take a walkthrough**; see [demo instructions](../../demo/README.md).
 
 ## Live SEC mode
 
@@ -56,7 +56,31 @@ docker compose run --rm api secrecon jobs show <job-id>
 docker compose run --rm api secrecon jobs redrive <job-id>
 ```
 
-Redrive produces a new linked job, retaining the failed job and its attempts. Fix schema or integrity problems before redriving quarantine. Adapter accommodation and amendment comparison are M4; do not silently edit preserved bytes to make a job succeed.
+Redrive produces a new linked job, retaining the failed job and its attempts. Fix schema or integrity problems before redriving quarantine. M4 supports versioned adapter replay and comparison; do not silently edit preserved bytes to make a job succeed.
+
+## Reconciliation and schema evolution (M4)
+
+After upgrading existing M3 data to migration 0005, populate its automatic comparison pointers:
+
+```text
+docker compose run --rm api secrecon reconcile links --refresh
+docker compose run --rm api secrecon reconcile create 0001234567-25-000001 0001234567-25-000002
+docker compose run --rm api secrecon reconcile show <comparison-id>
+```
+
+The sample accessions above refer to the synthetic seed. `GET /v1/amendments` lists current candidate evidence and comparison IDs. `GET /v1/reconciliations/{id}` exposes an immutable result with coverage and source/document evidence. Creation remains a CLI operation; authenticated web administration is M5.
+
+By default, comparisons use the latest successfully processed Company Facts snapshot for the company. Pass `--original-event <id>` and/or `--amendment-event <id>` to select preserved snapshots explicitly, and `--generation <name>` to inspect another generation. Both accessions must be a plausible original/amendment pair. Ambiguous automatic links remain unresolved even when an explicit pair is compared.
+
+```text
+docker compose run --rm api secrecon quarantine-list
+docker compose run --rm api secrecon replay --generation schema-v2 --offline --parser-version sec-json-v2
+docker compose run --rm api secrecon generation-diff live schema-v2
+```
+
+`sec-json-v1` stays the default. V2 supports a deliberately simulated change from a JSON number to a strict numeric string in `val`; this is not a claim about a real SEC schema change. Original bytes and earlier quarantine records stay intact. Inspect the generation report, coverage and new digest before considering promotion. Resume must specify the same parser version and uses the pinned comparison version.
+
+M4 extends the canonical digest to include automatic reconciliation output. Pre-M4 replay records are marked legacy and cannot be promoted or resumed under the new contract; create a fresh replay. Comparison histories requested by operators are operational records, restored through database backups. Read ADR 0003 for precision limits, snapshot selection and evidence rules.
 
 ## Replay and promotion
 
@@ -77,4 +101,4 @@ The previous generation remains available for explicit API queries with `?genera
 
 Run `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test` for the full offline gate. Run `python scripts/service_drills.py` after building the test image for an actual database interruption and object-store restart.
 
-See `docs/evidence/` for completed gates. Application hosting, Grafana dashboards, broad load testing and M4–M7 features remain outside M0–M3. The private repository's [GitHub Actions page](https://github.com/adityaanantharaman16/SECRecon/actions) shows hosted checks; local milestone evidence remains in the repository.
+See `docs/evidence/` for completed gates. Application hosting, Grafana dashboards, broad load testing and M5–M7 features remain planned. The private repository's [GitHub Actions page](https://github.com/adityaanantharaman16/SECRecon/actions) shows hosted checks; local milestone evidence remains in the repository.
