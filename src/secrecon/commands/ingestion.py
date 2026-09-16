@@ -101,6 +101,7 @@ def replay(
     resume: bool = False,
     promote_result: bool = typer.Option(False, "--promote"),
     expected_digest: str | None = None,
+    parser_version: str = "sec-json-v1",
 ) -> None:
     """Build a fresh generation solely from a frozen raw inventory."""
     if not offline:
@@ -108,7 +109,9 @@ def replay(
     if promote_result and not expected_digest:
         raise typer.BadParameter("--promote requires --expected-digest")
     with services() as deps:
-        result = rebuild(deps.engine, deps.archive, generation, resume=resume)
+        result = rebuild(
+            deps.engine, deps.archive, generation, resume=resume, parser_version=parser_version
+        )
         if promote_result:
             promote(deps.engine, generation, expected_digest or "", archive=deps.archive)
         typer.echo(json.dumps(result, indent=2))

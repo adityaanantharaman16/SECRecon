@@ -2,7 +2,7 @@
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
 from typing import Any
@@ -11,12 +11,20 @@ from secrecon.domain.types import cik_text, decimal_text, fingerprint
 from secrecon.storage.archive import Manifest
 
 PARSER_VERSION = "sec-json-v1"
+PARSER_VERSIONS = frozenset({PARSER_VERSION, "sec-json-v2"})
 FORMS = frozenset({"10-K", "10-Q", "10-K/A", "10-Q/A"})
 ACCESSION = re.compile(r"^\d{10}-\d{2}-\d{6}$")
 
 
 class SchemaError(ValueError):
-    pass
+    def __init__(self, message: str, *, path: str = "$", code: str = "invalid_structure") -> None:
+        super().__init__(message)
+        self.diagnostic = {
+            "severity": "error",
+            "path": path,
+            "code": code,
+            "message": message[:1000],
+        }
 
 
 @dataclass(frozen=True)
@@ -25,7 +33,8 @@ class ParsedSource:
     filings: list[dict[str, Any]] = field(default_factory=list)
     facts: list[dict[str, Any]] = field(default_factory=list)
     historical_pages: list[dict[str, str]] = field(default_factory=list)
-    warnings: list[str] = field(default_factory=list)
+    warnings: list[dict[str, str]] = field(default_factory=list)
+    parser_version: str = PARSER_VERSION
 
 
 def accession_text(value: Any) -> str:
@@ -45,11 +54,13 @@ def valid_date(value: Any, path: str, optional: bool = False) -> str | None:
         raise SchemaError(f"{path}: invalid ISO date") from exc
 
 
-def parse(manifest: Manifest, body: bytes) -> ParsedSource:
+def parse(manifest: Manifest, body: bytes, version: str = PARSER_VERSION) -> ParsedSource:
+    if version not in PARSER_VERSIONS:
+        raise ValueError("Unsupported parser version")
     if not manifest.complete or not 200 <= manifest.status < 300:
         raise SchemaError("Response is incomplete or unsuccessful")
     if manifest.kind == "document":
-        return ParsedSource(company={"cik": manifest.cik})
+        return ParsedSource(company={"cik": manifest.cik}, parser_version=version)
     try:
         payload = json.loads(body, parse_float=Decimal, parse_int=Decimal)
         if not isinstance(payload, dict):
@@ -62,12 +73,23 @@ def parse(manifest: Manifest, body: bytes) -> ParsedSource:
                 raise SchemaError("$.cik: expected an integer identity")
             if cik_text(str(int(raw_cik))) != manifest.cik:
                 raise SchemaError("$.cik: source identity mismatch")
-        return (
-            parse_facts(payload, manifest)
+        parsed = (
+            parse_facts(payload, manifest, version)
             if manifest.kind == "facts"
             else parse_submissions(payload, manifest)
         )
-    except (KeyError, TypeError, ValueError, ArithmeticError) as exc:
+        if manifest.kind == "facts":
+            for key in sorted(payload.keys() - {"cik", "entityName", "facts"}):
+                parsed.warnings.append(
+                    {
+                        "severity": "warning",
+                        "path": "$/" + key,
+                        "code": "unknown_optional_field",
+                        "message": "Unrecognized optional field preserved in raw source",
+                    }
+                )
+        return replace(parsed, parser_version=version)
+    except (KeyError, TypeError, ValueError, ArithmeticError, AttributeError) as exc:
         if isinstance(exc, SchemaError):
             raise
         raise SchemaError(f"Invalid {manifest.kind} structure: {exc}") from exc
@@ -123,11 +145,14 @@ def parse_submissions(payload: dict[str, Any], manifest: Manifest) -> ParsedSour
     return ParsedSource(company=company, filings=filings, historical_pages=pages)
 
 
-def parse_facts(payload: dict[str, Any], manifest: Manifest) -> ParsedSource:
+def parse_facts(
+    payload: dict[str, Any], manifest: Manifest, version: str = PARSER_VERSION
+) -> ParsedSource:
     company = {"cik": manifest.cik, "name": payload.get("entityName", "")}
     if not isinstance(payload.get("facts"), dict):
         raise SchemaError("$.facts: expected object")
     facts = []
+    warnings = []
     for concept, definition in payload["facts"].get("us-gaap", {}).items():
         if not isinstance(definition.get("units"), dict):
             raise SchemaError(f"$.facts.us-gaap.{concept}.units: expected object")
@@ -138,8 +163,42 @@ def parse_facts(payload: dict[str, Any], manifest: Manifest) -> ParsedSource:
                 if entry.get("form") not in FORMS:
                     continue
                 value = entry["val"]
+                entry_path = f"$/facts/us-gaap/{concept.replace('~', '~0').replace('/', '~1')}/units/{unit.replace('~', '~0').replace('/', '~1')}/{index}"
+                value_path = entry_path + "/val"
+                for key in sorted(
+                    entry.keys()
+                    - {"start", "end", "val", "accn", "fy", "fp", "form", "filed", "frame"}
+                ):
+                    warnings.append(
+                        {
+                            "severity": "warning",
+                            "path": entry_path + "/" + key.replace("~", "~0").replace("/", "~1"),
+                            "code": "unknown_optional_field",
+                            "message": "Unrecognized optional observation field preserved in raw source",
+                        }
+                    )
+                if (
+                    version == "sec-json-v2"
+                    and isinstance(value, str)
+                    and re.fullmatch(r"-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?", value)
+                ):
+                    value = Decimal(value)
                 if isinstance(value, bool) or not isinstance(value, Decimal):
-                    raise SchemaError(f"{concept}.{unit}[{index}].val: expected JSON number")
+                    raise SchemaError(
+                        f"{concept}.{unit}[{index}].val: expected JSON number",
+                        path=value_path,
+                        code="invalid_numeric_type",
+                    )
+                if (
+                    not value.is_finite()
+                    or abs(int(value.as_tuple().exponent)) > 1000
+                    or len(value.as_tuple().digits) > 1000
+                ):
+                    raise SchemaError(
+                        "Financial number exceeds supported precision/exponent bounds",
+                        path=value_path,
+                        code="numeric_range",
+                    )
                 start = valid_date(entry.get("start"), "start", True)
                 end = valid_date(entry["end"], "end")
                 if start and end and start > end:
@@ -165,4 +224,4 @@ def parse_facts(payload: dict[str, Any], manifest: Manifest) -> ParsedSource:
                     f"/facts/us-gaap/{concept.replace('~', '~0').replace('/', '~1')}/units/{unit.replace('~', '~0').replace('/', '~1')}/{index}"
                 )
                 facts.append(fact)
-    return ParsedSource(company=company, facts=facts)
+    return ParsedSource(company=company, facts=facts, warnings=warnings)

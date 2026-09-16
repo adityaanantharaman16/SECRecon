@@ -56,3 +56,26 @@ def test_decimal_roundtrip(value: object) -> None:
 
 def test_fingerprint_is_order_independent() -> None:
     assert fingerprint({"a": 1, "b": 2}) == fingerprint({"b": 2, "a": 1})
+
+
+@pytest.mark.parametrize("value", [{"amount": 1}, True, "Infinity", "1e1001", "USD 100"])
+def test_version_two_rejects_unsafe_or_ambiguous_numeric_shapes(value):
+    body = (
+        (FIXTURES / "facts.json")
+        .read_bytes()
+        .replace(b"12345678901234567891.1234", json.dumps(value).encode())
+    )
+    with pytest.raises(SchemaError) as failure:
+        parse(manifest("facts"), body, "sec-json-v2")
+    assert failure.value.diagnostic["path"].endswith("/1/val")
+
+
+def test_version_two_preserves_identity_when_accepting_decimal_strings():
+    body = (FIXTURES / "facts.json").read_bytes()
+    evolved = body.replace(b"12345678901234567891.1234", b'"12345678901234567891.1234"')
+    assert (
+        parse(manifest("facts"), evolved, "sec-json-v2").facts
+        == parse(manifest("facts"), body).facts
+    )
+    with pytest.raises(SchemaError):
+        parse(manifest("facts"), evolved, "sec-json-v1")

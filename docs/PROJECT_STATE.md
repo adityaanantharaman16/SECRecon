@@ -4,9 +4,9 @@ Last updated: 2026-09-16.
 
 ## Current position
 
-**Phase:** M0–M3 complete locally; M4 is next if requested.
+**Phase:** M0–M4 complete; M5 is next if requested.
 
-M0–M3 local gates pass, including M1's recorded SEC fixture gate. M4–M7 remain planned. The full isolated suite passes 54 tests with 89.47% combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). Hosted CI is configured to run on pushes and pull requests; check GitHub Actions for the latest hosted result.
+M0–M4 local gates pass, including real recorded-source reconciliation and schema evolution. M5–M7 remain planned. The full isolated suite passes **79 tests** with **90.75%** combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). The hosted CI capacity failure is fixed and verified; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest commit's result.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -14,11 +14,11 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 
 | Milestone | Status | Evidence required to close |
 | --- | --- | --- |
-| M0: foundation | Complete | [M0 evidence](evidence/M0.md); hosted CI pending |
+| M0: foundation | Complete | [M0 evidence](evidence/M0.md), [hosted CI](evidence/CI.md) |
 | M1: sources and facts | Complete | [M1 evidence](evidence/M1.md) |
 | M2: durable processing | Complete | [M2 evidence](evidence/M2.md) |
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
-| M4: reconciliation | Not started | Verified amendment comparison and schema evolution |
+| M4: reconciliation | Complete | [M4 evidence](evidence/M4.md); 79 tests pass |
 | M5: operations | Not started | Search, protected admin actions, correlated telemetry |
 | M6: failure and performance evidence | Not started | Repeatable drills and measured report |
 | M7: release and handoff | Not started | Local release, restore, rollback and case study |
@@ -27,7 +27,7 @@ Allowed status values: Not started, In progress, Blocked, Complete. Link evidenc
 
 ## First implementation task
 
-M4.1 accession comparisons is the next implementation slice, if requested. Start with the verified Robinhood original/amendment fixtures and the synthetic changed-value pair. Do not implement M4 as part of the completed M0–M3 request. Read the recorded fixture notes before making claims about observed financial changes.
+M5.1 is next, if requested: implement indexed query filters, deterministic cursor pagination and API error contracts with integration coverage. Read ADR 0003 before changing comparison semantics. M4 comparisons, candidate linkage and schema replay already exist; do not rebuild them. The static `demo/` is a fictional product concept, not a connected UI or completion of M5.
 
 Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
@@ -54,10 +54,25 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Full gate: `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test`.
 - Actual dependency drill: `python scripts/service_drills.py` (only the test project).
 - API: `http://localhost:8000/docs`; facts and provenance are available.
+- Reconciliation: `docker compose exec api secrecon reconcile links --refresh` for existing pre-M4 data, then `GET /v1/amendments` and `GET /v1/reconciliations/{id}`. New projections update comparisons automatically.
+- Frontend concept: `py -3.13 -m http.server 8010 --bind 127.0.0.1 --directory demo`, then open `http://127.0.0.1:8010` and select **Take a walkthrough**. See [demo guide](../demo/README.md).
 - Runbook: [local operations](runbooks/LOCAL_OPERATIONS.md).
 - Architecture: [processing and replay](adr/0002-processing-and-replay.md).
+- M4 contracts: [reconciliation and schema evolution](adr/0003-reconciliation-and-schema-evolution.md).
 
 ## Session log
+
+### 2026-09-16: CI repair, M4 completion and product demo
+
+- Fixed hosted CI's SeaweedFS volume-slot exhaustion using explicit test-only volume capacity. Commit `8610bf7`; [hosted repair run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35098280173). Tests and coverage thresholds were not weakened.
+- Implemented immutable snapshot-bound comparisons, conservative amendment candidates, exact decimal deltas, source/document evidence, structured schema diagnostics, parser-versioned replay and generation reports. Original-only observations express missing coverage, never deletion. Migration 0005 includes data-preserving upgrade coverage from 0004.
+- Audit fixes: indexed snapshot queries; rejected stale parser commits for retry; covered late source arrival and concurrent comparisons; fixed extreme Decimal scale precision; pinned comparison versions and explicitly marked legacy replay records. Old M3 replay digests need a fresh M4 baseline; legacy runs cannot be resumed or promoted. See ADR 0003.
+- Full gate: `docker compose -p secrecon-m4-final -f compose.yaml -f compose.test.yaml run --build --rm test` — **79 passed**, Ruff/format/strict mypy passed, **90.75%** domain/job coverage, 95.36 seconds, two existing upstream deprecation warnings. Ignored log: `.local/m4-final-gate.log`. Targeted migration/rule audit passed 10 tests before the final full gate.
+- Runtime upgrade: `docker compose up -d --build` succeeded; `/health/ready` reports schema **0005**. `docker compose exec api secrecon reconcile links --refresh` and `reconcile create 0001234567-25-000001 0001234567-25-000002` succeeded for existing synthetic seed data. The read API exposes the resulting immutable comparison. Live SEC access stays off.
+- Added the standalone `demo/` concept: six screens, three fictional comparison scenarios, provenance drawer, JSON export, search/filtering, simulated linked redrive, replay and a seven-step tour. Browser checks covered desktop and 390-pixel layouts, search, coverage messaging, job history preservation, replay and all tour steps; no console errors observed. JavaScript syntax checks passed. No backend integration or M5 telemetry/authentication is claimed.
+- Owner demonstration: compare the original and amendment, inspect a value's source snapshot, and explain why missing coverage is not deletion. Then simulate recovery in the frontend and distinguish financial replay from restoring operational history through database backups.
+- Work branch: `feat/m4-reconciliation`; at least one M4 milestone commit plus a separate demo commit. Required runtime remains local/free; no new SEC requests, dependencies or public hosting were introduced.
+- Next concrete task: M5.1 query filters, pagination and API contracts, only when requested. Keep M5 connected UI work separate from this static demo.
 
 ### 2026-09-16: private GitHub publication and branch naming
 

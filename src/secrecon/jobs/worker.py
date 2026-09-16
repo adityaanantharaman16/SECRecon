@@ -11,6 +11,7 @@ from sqlalchemy import Connection, Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from secrecon.config import Settings
+from secrecon.db.projections import ProjectionVersionChanged
 from secrecon.ingestion.adapters import SchemaError
 from secrecon.ingestion.client import FetchError
 from secrecon.ingestion.rate_limit import AccessPaused
@@ -68,7 +69,15 @@ class Worker:
             quarantined = isinstance(exc, (SchemaError, ArchiveIntegrityError))
             retryable = isinstance(
                 exc,
-                (SQLAlchemyError, BotoCoreError, ClientError, RedisError, OSError, AccessPaused),
+                (
+                    SQLAlchemyError,
+                    BotoCoreError,
+                    ClientError,
+                    RedisError,
+                    OSError,
+                    AccessPaused,
+                    ProjectionVersionChanged,
+                ),
             )
             retry_after = 0.0
             if isinstance(exc, FetchError):

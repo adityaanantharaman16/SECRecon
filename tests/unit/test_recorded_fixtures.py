@@ -35,9 +35,12 @@ def test_recorder_refuses_to_overwrite_existing_capture(tmp_path):
 
 
 @pytest.mark.parametrize("cik", ["0001018724", "0001783879", "0001874178"])
-def test_recorded_sources_match_identity_checksums_and_document_accessions(recorded_sources, cik):
+@pytest.mark.parametrize("version", ["sec-json-v1", "sec-json-v2"])
+def test_recorded_sources_match_identity_checksums_and_document_accessions(
+    recorded_sources, cik, version
+):
     sources = recorded_sources(cik)
-    parsed = {source.kind: parse(source, body) for source, body in sources}
+    parsed = {source.kind: parse(source, body, version) for source, body in sources}
     assert parsed["submissions"].company["cik"] == cik
     assert parsed["facts"].company["cik"] == cik
     assert parsed["facts"].facts

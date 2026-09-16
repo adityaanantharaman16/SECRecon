@@ -5,8 +5,22 @@ from typing import Any
 from sqlalchemy import Connection, Engine, text
 
 from secrecon.domain.types import canonical
-from secrecon.ingestion.adapters import PARSER_VERSION, ParsedSource, SchemaError, parse
+from secrecon.ingestion.adapters import ParsedSource, SchemaError, parse
 from secrecon.storage.archive import Archive, ArchiveIntegrityError, Manifest
+
+
+class ProjectionVersionChanged(RuntimeError):
+    """Retry a prepared job after an active parser promotion."""
+
+
+def generation_parser(connection: Connection, generation: str) -> str:
+    generation = resolve_generation(connection, generation)
+    version = connection.scalar(
+        text("SELECT parser_version FROM generations WHERE name=:g"), {"g": generation}
+    )
+    if not version:
+        raise ValueError("Projection generation does not exist")
+    return str(version)
 
 
 def resolve_generation(connection: Connection, generation: str) -> str:
@@ -44,6 +58,10 @@ def apply_projection(
     connection: Connection, manifest: Manifest, parsed: ParsedSource, generation: str = "active"
 ) -> None:
     generation = resolve_generation(connection, generation)
+    if generation_parser(connection, generation) != parsed.parser_version:
+        raise ProjectionVersionChanged(
+            "Active parser changed after preparation; retry with its version"
+        )
     register_source(connection, manifest)
     # Per-company serialization is intentionally coarse at the demo watchlist size.
     connection.execute(
@@ -55,7 +73,7 @@ def apply_projection(
         SELECT status FROM processing_runs WHERE generation=:gen
         AND event_id=:id AND parser_version=:parser
     """),
-        {"gen": generation, "id": manifest.event_id, "parser": PARSER_VERSION},
+        {"gen": generation, "id": manifest.event_id, "parser": parsed.parser_version},
     )
     if status == "succeeded":
         return
@@ -122,7 +140,7 @@ def apply_projection(
                 "fp": fact["fingerprint"],
                 "event": manifest.event_id,
                 "locator": fact["locator"],
-                "parser": PARSER_VERSION,
+                "parser": parsed.parser_version,
             },
         )
         links.add((fact["accession"], "facts"))
@@ -141,25 +159,61 @@ def apply_projection(
         {
             "gen": generation,
             "id": manifest.event_id,
-            "parser": PARSER_VERSION,
+            "parser": parsed.parser_version,
             "count": len(parsed.facts),
         },
     )
+    connection.execute(
+        text(
+            "INSERT INTO source_diagnostics VALUES (:g,:id,:p,CAST(:d AS jsonb)) ON CONFLICT DO NOTHING"
+        ),
+        {
+            "g": generation,
+            "id": manifest.event_id,
+            "p": parsed.parser_version,
+            "d": canonical(parsed.warnings),
+        },
+    )
+    from secrecon.db.reconciliation import refresh_company
+
+    refresh_company(connection, generation, manifest.cik)
 
 
-def quarantine(connection: Connection, manifest: Manifest, generation: str, reason: str) -> None:
+def quarantine(
+    connection: Connection,
+    manifest: Manifest,
+    generation: str,
+    reason: str | Exception,
+    parser_version: str | None = None,
+) -> None:
     generation = resolve_generation(connection, generation)
+    current_parser = generation_parser(connection, generation)
+    if parser_version and parser_version != current_parser:
+        raise ProjectionVersionChanged("Parser changed before quarantine; retry")
+    diagnostics = (
+        [reason.diagnostic]
+        if isinstance(reason, SchemaError)
+        else [
+            {
+                "severity": "error",
+                "path": "$",
+                "code": "integrity_error",
+                "message": str(reason)[:1000],
+            }
+        ]
+    )
     register_source(connection, manifest)
     connection.execute(
         text("""
-        INSERT INTO quarantine_records(generation,event_id,parser_version,reason)
-        VALUES (:gen,:id,:parser,:reason) ON CONFLICT DO NOTHING
+        INSERT INTO quarantine_records(generation,event_id,parser_version,reason,diagnostics)
+        VALUES (:gen,:id,:parser,:reason,CAST(:diagnostics AS jsonb)) ON CONFLICT DO NOTHING
     """),
         {
             "gen": generation,
             "id": manifest.event_id,
-            "parser": PARSER_VERSION,
-            "reason": reason[:2000],
+            "parser": current_parser,
+            "reason": str(reason)[:2000],
+            "diagnostics": canonical(diagnostics),
         },
     )
 
@@ -167,11 +221,13 @@ def quarantine(connection: Connection, manifest: Manifest, generation: str, reas
 def process_source(
     engine: Engine, archive: Archive, manifest: Manifest, generation: str = "active"
 ) -> ParsedSource:
+    with engine.begin() as connection:
+        version = generation_parser(connection, generation)
     try:
-        parsed = parse(manifest, archive.load(manifest))
+        parsed = parse(manifest, archive.load(manifest), version)
     except (SchemaError, ArchiveIntegrityError) as exc:
         with engine.begin() as connection:
-            quarantine(connection, manifest, generation, str(exc))
+            quarantine(connection, manifest, generation, exc, version)
         raise
     with engine.begin() as connection:
         apply_projection(connection, manifest, parsed, generation)

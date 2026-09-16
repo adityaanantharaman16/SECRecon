@@ -4,9 +4,11 @@ from typing import Any
 
 from sqlalchemy import Connection, Engine, text
 
-from secrecon.db.projections import process_source, register_source
+from secrecon.db.projections import generation_parser, process_source, register_source
+from secrecon.db.reconciliation import canonical_heads
+from secrecon.domain.reconciliation import COMPARISON_VERSION
 from secrecon.domain.types import canonical, fingerprint
-from secrecon.ingestion.adapters import PARSER_VERSION
+from secrecon.ingestion.adapters import PARSER_VERSION, PARSER_VERSIONS
 from secrecon.jobs.store import enqueue
 from secrecon.storage.archive import Archive, ArchiveIntegrityError
 
@@ -18,11 +20,12 @@ def inventory(engine: Engine, archive: Archive) -> int:
         with engine.begin() as connection:
             register_source(connection, manifest)
             if manifest.complete and 200 <= manifest.status < 300:
+                version = generation_parser(connection, "active")
                 enqueue(
                     connection,
                     "normalize",
                     {"event_id": manifest.event_id, "generation": "active"},
-                    f"normalize:active:{PARSER_VERSION}:{manifest.event_id}",
+                    f"normalize:active:{version}:{manifest.event_id}",
                     priority=0,
                 )
                 count += 1
@@ -45,11 +48,17 @@ def digest(connection: Connection, generation: str) -> dict[str, Any]:
             text(f"SELECT {columns} FROM {table} WHERE generation=:g"), {"g": generation}
         ).mappings()
         rows[table] = sorted((dict(row) for row in mapped), key=canonical)
+    rows.update(canonical_heads(connection, generation))
     return {"sha256": fingerprint(rows), "counts": {key: len(value) for key, value in rows.items()}}
 
 
 def rebuild(
-    engine: Engine, archive: Archive, generation: str, *, resume: bool = False
+    engine: Engine,
+    archive: Archive,
+    generation: str,
+    *,
+    resume: bool = False,
+    parser_version: str = PARSER_VERSION,
 ) -> dict[str, Any]:
     # Session lock prevents two CLI processes advancing the same replay checkpoint.
     with engine.connect() as lock:
@@ -61,7 +70,9 @@ def rebuild(
         if not acquired:
             raise ValueError("This replay generation is already being processed")
         try:
-            return _rebuild(engine, archive, generation, resume=resume)
+            return _rebuild(
+                engine, archive, generation, resume=resume, parser_version=parser_version
+            )
         finally:
             lock.execute(
                 text("SELECT pg_advisory_unlock(hashtextextended(:key,0))"),
@@ -71,8 +82,15 @@ def rebuild(
 
 
 def _rebuild(
-    engine: Engine, archive: Archive, generation: str, *, resume: bool = False
+    engine: Engine,
+    archive: Archive,
+    generation: str,
+    *,
+    resume: bool = False,
+    parser_version: str = PARSER_VERSION,
 ) -> dict[str, Any]:
+    if parser_version not in PARSER_VERSIONS:
+        raise ValueError("Unsupported parser version")
     if generation in {"live", "active"} or not generation or len(generation) > 80:
         raise ValueError("Choose a new explicit generation name, not live/active")
     with engine.begin() as connection:
@@ -87,21 +105,32 @@ def _rebuild(
             .first()
         )
         if existing:
-            if not resume or existing["parser_version"] != PARSER_VERSION:
-                raise ValueError("Replay exists; resume requires the same parser version")
+            if (
+                not resume
+                or existing["parser_version"] != parser_version
+                or existing["comparison_version"] != COMPARISON_VERSION
+            ):
+                raise ValueError(
+                    "Replay exists; resume requires the same parser and comparison versions"
+                )
             ids, position = existing["event_ids"], existing["position"]
         else:
             manifests = sorted(archive.manifests(), key=lambda m: (m.fetched_at, m.event_id))
             ids, position = [m.event_id for m in manifests], 0
             connection.execute(
                 text("INSERT INTO generations(name,parser_version) VALUES (:g,:p)"),
-                {"g": generation, "p": PARSER_VERSION},
+                {"g": generation, "p": parser_version},
             )
             connection.execute(
                 text("""
-                INSERT INTO replays(generation,parser_version,event_ids) VALUES (:g,:p,CAST(:ids AS jsonb))
+                INSERT INTO replays(generation,parser_version,event_ids,comparison_version) VALUES (:g,:p,CAST(:ids AS jsonb),:comparison)
             """),
-                {"g": generation, "p": PARSER_VERSION, "ids": canonical(ids)},
+                {
+                    "g": generation,
+                    "p": parser_version,
+                    "ids": canonical(ids),
+                    "comparison": COMPARISON_VERSION,
+                },
             )
     try:
         # Revalidate the full inventory on resume, including previously processed events.
@@ -164,6 +193,7 @@ def promote(engine: Engine, generation: str, expected_digest: str, *, archive: A
         )
         if (
             replay["state"] != "ready"
+            or replay["comparison_version"] != COMPARISON_VERSION
             or digest(connection, generation)["sha256"] != expected_digest
         ):
             raise ArchiveIntegrityError("Replay is not ready or expected digest differs")
