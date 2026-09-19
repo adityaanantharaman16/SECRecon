@@ -302,7 +302,7 @@ Build a release from a tested commit, install the exact artifact into isolated l
 
 ## 5. API and operator contracts
 
-These are planned interfaces; implement and document exact schemas as their milestones arrive.
+These interfaces are implemented through M5. Consult `/docs`, `api/schemas.py` and the operations UI runbook for exact current schemas; this table summarizes their intent.
 
 | Route | Purpose |
 | --- | --- |
@@ -481,7 +481,7 @@ Command map: ingestion, jobs, backfills and replay are implemented. The fault `d
 | --- | --- |
 | Install locked dependencies | `uv sync --frozen` |
 | Lint, format check, types | `uv run ruff check .`; `uv run ruff format --check .`; `uv run mypy src` |
-| Run offline unit tests | `uv run pytest tests/unit tests/contract` |
+| Run offline unit tests (implemented) | `uv run pytest tests/unit` |
 | Start development stack | `docker compose -f compose.yaml -f compose.dev.yaml up -d --build` |
 | Migrate | `docker compose run --rm migrate` |
 | Ingest a company | `uv run secrecon ingest --cik <CIK>` |
@@ -505,4 +505,4 @@ Suggested prompt for a future implementation agent:
 
 > Read AGENTS.md, docs/PROJECT_STATE.md and the relevant milestone in docs/PROJECT_GUIDE.md. Implement the next incomplete slice, preserving the local/free scope. Explain the behavior and engineering concept, run the required checks, and update the state file with evidence and the next task. Do not claim planned features are already implemented.
 
-The next step is maintained in **PROJECT_STATE.md**. Do not restart from M0 or assume later milestones exist merely because they appear in this guide.
+The next step is maintained in **PROJECT_STATE.md**. For a new machine or implementation agent, use [IMPLEMENTATION_HANDOFF.md](IMPLEMENTATION_HANDOFF.md) for consolidated context, fresh setup, data-transfer boundaries and detailed M6/M7 slices. Do not restart from M0 or assume later milestones exist merely because they appear in this guide.
