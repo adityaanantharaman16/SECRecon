@@ -6,6 +6,7 @@ SEC filing ingestion, financial fact provenance, and amendment reconciliation, w
 
 Start here:
 
+- [Implementation handoff](docs/IMPLEMENTATION_HANDOFF.md): consolidated context, setup on another machine, and the remaining roadmap through deployment.
 - [Project guide](docs/PROJECT_GUIDE.md): scope, architecture, milestones, testing gates, Docker, Git, and delivery plan.
 - [Current project state](docs/PROJECT_STATE.md): completed work, next task, evidence, and session handoff.
 - [Agent instructions](AGENTS.md): how implementation agents should use and maintain this context.

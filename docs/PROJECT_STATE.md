@@ -1,12 +1,16 @@
 # SECRecon: current project state
 
-Last updated: 2026-09-16.
+Last updated: 2026-09-19.
+
+Moving machines or agents? Start with the consolidated [implementation handoff and deployment roadmap](IMPLEMENTATION_HANDOFF.md), then use this file for the latest checkpoint.
 
 ## Current position
 
 **Phase:** M0–M5 complete; M6 is next if requested.
 
 M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6–M7 remain planned. The full isolated suite passes **94 tests** with **91.18%** combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI now has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest commit's result.
+
+M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. Subsequent documentation commits do not change that implementation baseline. No M6 implementation has been added by the handoff session.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -64,6 +68,15 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 
 ## Session log
 
+### 2026-09-19: cross-machine and cross-agent handoff
+
+- Verified a clean working tree at M5 commit `5be2ba8`, inspected the actual package, commands, configuration, migrations, tests, ADRs and milestone gates, and checked GitHub main/CI through the existing authenticated API helper. Main matches the M5 merge and run `35112209686` succeeded.
+- Added [IMPLEMENTATION_HANDOFF.md](IMPLEMENTATION_HANDOFF.md): consolidated design/correctness contracts, code/evidence map, fresh-machine bootstrap, optional existing-data transfer plan, implemented versus planned boundaries, complete M6/M7 slices and gates, optional public deployment prerequisites, and a ready-to-paste receiving-agent prompt.
+- Updated README/guide entry points and corrected the state record to include the completed M5 merge/hosted result. Branch: `docs/cross-machine-handoff`. Checked documentation links and `git diff --check`; application tests were not rerun for this documentation-only change. The 94-test result remains M5 historical evidence; the receiving machine must run its own baseline.
+- Limitations: Git does not transfer ignored configuration, volumes, archives, backups or traces. A fresh offline workspace can use committed fixtures. Exact operational-state migration needs a verified PostgreSQL/raw backup and isolated restore; that automation remains M7 work. No data transfer, live ingestion, deployment or new infrastructure was performed here.
+- Owner demonstration: clone on a new machine, understand what is already implemented, and give the next agent one consolidated context document. The key distinction is reproducible source/configuration versus durable runtime data and historical evidence.
+- Next concrete task: verify setup on the receiving machine, then M6.1 isolated fault-harness safeguards/reporting and existing crash probes. Do not skip M6's required restore drill or three-consecutive-run gate.
+
 ### 2026-09-16: M5 connected operations and observability
 
 - Implemented allowlisted/indexed search, generation-pinned keyset pagination, bounded provenance/comparison traversal and sanitized API errors. Migration 0006 retains existing data and adds query indexes, operator requests/sessions and job trace context; populated upgrade tests cover 0004 and 0005.
@@ -73,8 +86,8 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Full gate: `docker compose -p secrecon-m5-final -f compose.yaml -f compose.test.yaml run --build --rm test` — **94 passed**, **91.18%** domain/job coverage, 202.49 seconds; Ruff, format and strict mypy passed. Two existing upstream deprecation warnings remain. Final focused API/telemetry audit is recorded in `.local/m5-audit-gate.log`; source search includes aggregate filing evidence as well as document manifests.
 - Collector validation and Promtool alert tests passed. Locked Python dependencies exported with `uv export --frozen --no-emit-project` and checked with `pip-audit --no-deps --disable-pip`: no known vulnerabilities found. JavaScript syntax passed. Browser checks verified desktop/mobile views, comparison → provenance → source, sign-in boundary and local Swagger without console errors.
 - Took `.local/backups/secrecon-pre-m5.dump`, upgraded the development database to 0006, and started the local observability profile. The mock-fetch smoke exported trace `a93487f3e70dab694092f17f4d6a61a0` through Collector to Tempo; Grafana's datasource returned fetch, archive, enqueue, worker and projection spans. Prometheus returned the live SQL runnable metric. The smoke appends explicitly synthetic events; no new SEC requests occurred.
-- Audit corrected Collector retry bounds, Tempo volume ownership, error status on caught worker failures, provenance generation selection aggregate source lookup, and viewer-compatible trace navigation. A dedicated trace dashboard avoids granting Grafana edit/Explore permissions. Operational logs/traces remain best-effort diagnostics with bounded queues/retention; SQL and raw archives retain authoritative history. Alert notifications and sustained throughput claims are out of scope.
-- Work branch: `feat/m5-operations`, milestone commit `85fa628`; [PR #2](https://github.com/adityaanantharaman16/SECRecon/pull/2) records the audit and hosted gates. Require both hosted jobs before merging. Consult GitHub Actions for final hosted status; local acceptance evidence is [M5](evidence/M5.md).
+- Audit corrected Collector retry bounds, Tempo volume ownership, error status on caught worker failures, provenance generation selection, aggregate source lookup, and viewer-compatible trace navigation. A dedicated trace dashboard avoids granting Grafana edit/Explore permissions. Operational logs/traces remain best-effort diagnostics with bounded queues/retention; SQL and raw archives retain authoritative history. Alert notifications and sustained throughput claims are out of scope.
+- Work branch: `feat/m5-operations`, milestone commit `85fa628`, trace-navigation fix `566eb4e`; [PR #2](https://github.com/adityaanantharaman16/SECRecon/pull/2) merged after both hosted jobs passed. Squash commit on main: `5be2ba8`; its [main CI run also passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686). Local acceptance evidence is [M5](evidence/M5.md).
 - Owner demonstration: find a comparison, follow its value to immutable evidence, inspect a failed attempt and trace, then submit an idempotent recovery job. The engineering concepts are provenance, durable intent, fenced effects and observability that cannot compromise processing.
 - Next concrete task: M6.1 isolated failure harness, only when requested; then measured performance baselines and a recovery report.
 
