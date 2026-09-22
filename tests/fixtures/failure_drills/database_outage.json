@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "name": "database outage and object-store restart",
+  "scenario": "database_outage_and_object_store_restart",
+  "description": "A claimed SQL job remains unacknowledged during a PostgreSQL outage, is fenced and retried after recovery, and retains immutable source bytes across an object-store restart.",
+  "expected": {
+    "before": {
+      "job_state": "running",
+      "job_owner": "interrupted",
+      "job_token": 1,
+      "attempt_count": 1,
+      "attempt_outcomes": [
+        "running"
+      ],
+      "event_states": [
+        "queued",
+        "running"
+      ],
+      "outbox_pending": 0,
+      "redis_pending": 1,
+      "source_byte_length": 17,
+      "source_sha256": "2ef08b47f8246eee0cfe9ed7b2bdb48a3a1f292452aa779ad9c05a593d3382ec"
+    },
+    "after": {
+      "job_state": "succeeded",
+      "job_owner": "recovered",
+      "job_token": 2,
+      "attempt_count": 2,
+      "attempt_outcomes": [
+        "lease_expired",
+        "succeeded"
+      ],
+      "event_states": [
+        "queued",
+        "running",
+        "queued",
+        "running",
+        "succeeded"
+      ],
+      "outbox_pending": 0,
+      "redis_pending": 0,
+      "source_byte_length": 17,
+      "source_sha256": "2ef08b47f8246eee0cfe9ed7b2bdb48a3a1f292452aa779ad9c05a593d3382ec"
+    }
+  }
+}
