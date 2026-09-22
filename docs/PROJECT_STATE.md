@@ -6,11 +6,11 @@ Moving machines or agents? Start with the consolidated [implementation handoff a
 
 ## Current position
 
-**Phase:** M0–M5 complete; M6.1 implementation is in progress and awaits Docker-backed verification.
+**Phase:** M0–M5 and M6.1 complete; M6.2 performance baselines are next.
 
-M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6–M7 remain planned. The full isolated suite passes **94 tests** with **91.18%** combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI now has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest commit's result.
+M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6.1's isolated failure gate also passes. The latest full isolated suite passes **111 tests** with **91.67%** combined statement/branch coverage of domain and job modules. M6.2–M7 remain planned. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest hosted result.
 
-M6.1 now has a fixture-driven isolated failure harness, SQL invariant/trace/timing reports and a hard Compose-project refusal safeguard. Host lint, format, strict mypy and unit tests pass, but this agent environment has no Docker daemon, so the required real outage drill, three-consecutive-run gate and full integration/coverage gate are explicitly pending. See [M6 evidence](evidence/M6.md).
+M6.1 now has a fixture-driven isolated failure harness, SQL invariant/trace/timing reports and a hard Compose-project refusal safeguard. The owner ran three consecutive clean isolated drills, confirmed the refusal against `secrecon`, and passed the full 111-test Docker gate at 91.67% coverage. See [M6 evidence](evidence/M6.md).
 
 M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. Subsequent documentation commits do not change that implementation baseline. The current M6.1 work remains unmerged on its feature branch.
 
@@ -26,16 +26,16 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
 | M4: reconciliation | Complete | [M4 evidence](evidence/M4.md); 79 tests pass |
 | M5: operations | Complete | [M5 evidence](evidence/M5.md); 94 tests, tracing smoke and alert gates |
-| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md); Docker-backed three-run drill and performance report remain pending |
+| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md); M6.1 complete, M6.2 performance baseline and M6.3 recovery report remain |
 | M7: release and handoff | Not started | Local release, restore, rollback and case study |
 
 Allowed status values: Not started, In progress, Blocked, Complete. Link evidence when changing status; do not infer completion from time spent.
 
 ## First implementation task
 
-M6.1 verification is next: with Docker available, run the isolated failure harness for three consecutive clean runs, then run the full isolated integration/coverage gate and record the exact reports, trace IDs, pass count, coverage and duration in [M6 evidence](evidence/M6.md). The harness implementation already selects only `secrecon-drill-*` Compose projects, records before/after invariants/timings/trace IDs and rejects development/release project names. Do not mark M6.1 complete until those Docker-backed gates pass. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
+M6.2 performance baselines are next. Freeze the documented synthetic dataset and machine resources, then measure replay throughput and digest equivalence, indexed API latency/error rate, crash-recovery time, queue drain, memory and bounded telemetry behavior against the proposed budgets in `docs/PROJECT_GUIDE.md`. Publish actual results and identify the bottleneck; do not hide a missed target or weaken correctness. M6.1 is complete, but M6 remains **In progress** until the performance baseline and recovery report are recorded. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
 
-Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
+Start by checking Git status and Docker readiness, then record the exact reference-machine resources used for benchmarks. The owner's Docker workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine; Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
 ## Settled design defaults
 
@@ -69,6 +69,16 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - M5 contracts: [operations and observability](adr/0004-operations-and-observability.md), [connected UI walkthrough](runbooks/OPERATIONS_UI.md).
 
 ## Session log
+
+### 2026-09-22: M6.1 isolated failure harness completed
+
+- Completed the Docker-backed acceptance that was unavailable in the implementation agent environment. On branch `feat/m6-failure-harness-2` at `2182d77`, `python scripts/service_drills.py --project secrecon-drill-m6-gate --runs 3` passed three consecutive isolated database-outage/object-store-restart runs. The three timestamped JSON report paths are recorded in [M6 evidence](evidence/M6.md); each contains the before/after SQL invariants, persisted trace correlation and timings for its run.
+- Reconfirmed the safety-critical refusal: `python scripts/service_drills.py --project secrecon` exited 2 with `SAFETY REFUSAL: refusing unsafe Compose project 'secrecon'; use secrecon-drill-<short-unique-name>`. No unsafe Compose operation ran.
+- Full gate: `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test` — **111 passed**, **91.67%** combined statement/branch coverage of domain and job modules, **47.69 seconds**, no failures. The earlier host gate also passed Ruff, formatting and strict mypy.
+- No architecture decision, migration, dependency, runtime configuration, raw-byte/provenance handling, decimal semantics or fact history changed. M6.1 is **Complete**; M6 remains **In progress** because performance and recovery evidence are separate slices.
+- Owner demonstration: show the hard refusal against the development project, then open any of the three drill reports and connect the SQL ownership transitions to the correlated attempt trace and measured recovery timing. The concept is a crash-test track with a locked gate: every destructive exercise gets a disposable environment, while PostgreSQL and the report preserve the authoritative record of what happened.
+- Work branch: `feat/m6-failure-harness-2`; implementation commit `2182d77`. Documentation completion commit follows on the same branch. No merge to `main`.
+- Next concrete task: M6.2 performance baselines using the frozen synthetic dataset and recorded machine resources; publish throughput, digest, latency, error-rate, recovery, queue-drain and memory results with an identified bottleneck. M6.3 recovery report follows.
 
 ### 2026-09-22: M6.1 isolated failure harness implementation (Docker verification pending)
 
