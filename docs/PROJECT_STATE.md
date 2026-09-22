@@ -1,16 +1,18 @@
 # SECRecon: current project state
 
-Last updated: 2026-09-19.
+Last updated: 2026-09-22.
 
 Moving machines or agents? Start with the consolidated [implementation handoff and deployment roadmap](IMPLEMENTATION_HANDOFF.md), then use this file for the latest checkpoint.
 
 ## Current position
 
-**Phase:** M0–M5 complete; M6 is next if requested.
+**Phase:** M0–M5 complete; M6.1 implementation is in progress and awaits Docker-backed verification.
 
 M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6–M7 remain planned. The full isolated suite passes **94 tests** with **91.18%** combined statement/branch coverage of domain and job modules. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI now has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest commit's result.
 
-M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. Subsequent documentation commits do not change that implementation baseline. No M6 implementation has been added by the handoff session.
+M6.1 now has a fixture-driven isolated failure harness, SQL invariant/trace/timing reports and a hard Compose-project refusal safeguard. Host lint, format, strict mypy and unit tests pass, but this agent environment has no Docker daemon, so the required real outage drill, three-consecutive-run gate and full integration/coverage gate are explicitly pending. See [M6 evidence](evidence/M6.md).
+
+M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. Subsequent documentation commits do not change that implementation baseline. The current M6.1 work remains unmerged on its feature branch.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -24,14 +26,14 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
 | M4: reconciliation | Complete | [M4 evidence](evidence/M4.md); 79 tests pass |
 | M5: operations | Complete | [M5 evidence](evidence/M5.md); 94 tests, tracing smoke and alert gates |
-| M6: failure and performance evidence | Not started | Repeatable drills and measured report |
+| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md); Docker-backed three-run drill and performance report remain pending |
 | M7: release and handoff | Not started | Local release, restore, rollback and case study |
 
 Allowed status values: Not started, In progress, Blocked, Complete. Link evidence when changing status; do not infer completion from time spent.
 
 ## First implementation task
 
-M6.1 is next, if requested: build a repeatable fixture-driven failure harness that selects an isolated Compose project, records before/after SQL invariants, timings and trace IDs, and refuses the development/release project. Start from existing crash/dependency tests and `scripts/service_drills.py`; do not rebuild working M2–M5 mechanisms. Read ADRs 0002–0004 before changing job ownership, comparison or telemetry semantics. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
+M6.1 verification is next: with Docker available, run the isolated failure harness for three consecutive clean runs, then run the full isolated integration/coverage gate and record the exact reports, trace IDs, pass count, coverage and duration in [M6 evidence](evidence/M6.md). The harness implementation already selects only `secrecon-drill-*` Compose projects, records before/after invariants/timings/trace IDs and rejects development/release project names. Do not mark M6.1 complete until those Docker-backed gates pass. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
 
 Start by checking Git status and Docker readiness. This workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine. Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
@@ -56,7 +58,7 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Start: `docker compose up -d --build` after `python scripts/bootstrap.py`.
 - Synthetic demo: `docker compose run --build --rm test python scripts/seed_demo.py`.
 - Full gate: `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test`.
-- Actual dependency drill: `python scripts/service_drills.py` (only the test project).
+- Actual dependency drill: `python scripts/service_drills.py --project secrecon-drill-m6-gate --runs 3` (isolated test-only project; hard refusal outside `secrecon-drill-*`).
 - Connected UI: `http://localhost:8000`; operator controls require `SECRECON_ADMIN_TOKEN` from ignored `.env`. API docs: `http://localhost:8000/docs`, with local assets and bearer authorization.
 - Optional diagnostics: `docker compose -f compose.yaml -f compose.observability.yaml --profile observability up -d --build`; Grafana at `http://localhost:3000`, Prometheus at `http://localhost:9090`.
 - Reconciliation: `docker compose exec api secrecon reconcile links --refresh` for existing pre-M4 data, then `GET /v1/amendments` and `GET /v1/reconciliations/{id}`. New projections update comparisons automatically.
@@ -67,6 +69,17 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - M5 contracts: [operations and observability](adr/0004-operations-and-observability.md), [connected UI walkthrough](runbooks/OPERATIONS_UI.md).
 
 ## Session log
+
+### 2026-09-22: M6.1 isolated failure harness implementation (Docker verification pending)
+
+- Replaced the one-off dependency drill with a fixture-driven harness that hard-refuses non-`secrecon-drill-*` base names before Compose invocation, derives a fresh child project for every run, refuses any pre-existing labeled child resources before claiming cleanup ownership, always pins the test Compose overlay, supports a three-consecutive-run gate, records software/machine metadata and bounded command timings, writes per-run JSON reports for successful/failed/timed-out commands, and destroys only its established isolated volumes after each run.
+- Extended the existing outage probe rather than changing processing semantics. The scenario uses the transactional outbox, pending Redis delivery, fenced SQL lease expiry/reclaim, normal `Worker` recovery, immutable archive bytes and persisted OpenTelemetry context. Before/after reports cover jobs, owners/tokens, attempts/outcomes, events, pending outbox/delivery state, source checksum and correlated trace IDs. Fixture: `tests/fixtures/failure_drills/database_outage.json`.
+- Added 17 harness unit tests, including explicit development/release/test project rejection, pre-existing-project refusal, command-timeout recording, full attempt trace-context checks and CLI refusal without Docker. `/opt/data/projects/SECRecon/.venv/bin/python scripts/check.py` passed Ruff, format, strict mypy and **51 host tests**; **60 integration tests skipped** because `SECRECON_INTEGRATION` was not enabled. Total collected: 111; duration 5.17 seconds; two existing upstream warnings remain.
+- Docker-backed acceptance is blocked in this Hermes execution environment: `docker info` cannot connect to `/var/run/docker.sock`, and no daemon/socket is available. Therefore no real outage run, three-run report, full integration pass count, coverage or duration is claimed. Pending commands and boundaries are recorded in [M6 evidence](evidence/M6.md).
+- No architecture decision changed and no new dependency, migration, cloud service, SEC request or runtime configuration was added. M6 remains **In progress**, not complete.
+- Owner demonstration after Docker verification: show refusal against `secrecon`, run three isolated outage/recovery drills, and compare the before/after SQL and trace evidence. The concept is a safety interlock plus a black-box flight recorder: destructive drills can touch only a disposable stack, while SQL remains the authoritative account of ownership and recovery.
+- Work branch: `feat/m6-failure-harness-2` (the preferred branch name was already attached to the closed duplicate task's worktree). No PR or merge.
+- Next concrete task: provide a working Docker daemon, run `python scripts/service_drills.py --project secrecon-drill-m6-gate --runs 3`, run the full isolated test/coverage gate, update M6 evidence with exact outputs, review the diff, then request review. M6.2 performance baselines follow only after M6.1 closes.
 
 ### 2026-09-19: cross-machine and cross-agent handoff
 
