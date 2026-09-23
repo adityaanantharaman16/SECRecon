@@ -24,5 +24,8 @@ The `checks` job for main merge commit `6f949e09` (PR #6) failed with `1 failed,
   - The other projection-path reads, `snapshot()` and `evidence()`, join small per-generation or per-accession sets to `source_events` by primary key. A diagnostic run of the whole integration suite with `auto_explain.log_min_duration=500ms` logged no statement at or above 500 ms after the fix.
   - No timeout was raised, no retry was added, and no assertion was changed.
 - **Regression test.** `test_snapshot_observations_stay_linear_when_statistics_predate_the_generation` reproduces the stale-statistics state and asserts that the planner cannot see the new generation. It checks the exact result rows, then bounds the tuples read from `pg_stat_xact_user_tables` by the total table rows. It fails on the old query (3,204,200 tuples read against a 12,400 bound) and passes on the fix. Counting tuples rather than timing them keeps it independent of runner speed.
+- **Hosted result.** PR #7 at `8a3c153` passed both workflows on the push run [35887476061](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35887476061) and the pull-request run [35887525983](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35887525983). Each run passed 168 tests at 91.67% coverage, in 81.57 s and 80.71 s of pytest time. The two previously bimodal files dropped:
+  - `test_recorded_sources.py`: 12.3 s and 11.9 s (was 9.7/116/64 s);
+  - `test_reconciliation.py`: 20.9 s and 20.7 s (was 19/92/112 s), now including the new regression test.
 
 See the 2026-09-23 CI-repair entry in `docs/PROJECT_STATE.md` for commands, local logs and the PR.

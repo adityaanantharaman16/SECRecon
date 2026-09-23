@@ -20,7 +20,7 @@ M6.2 adds an isolated performance harness. Its guide-sized acceptance run measur
 
 See [M6 evidence](evidence/M6.md).
 
-M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. M6.1 is merged on `main` through PR #4 (`24cee94`) and its acceptance-documentation PR #5 (`4158e6a`). M6.2 is merged on `main` through PR #6 (`6f949e0`). That merge's main CI run failed on a latent reconciliation query-plan defect, not on M6.2 code. The fix is on `fix/ci-integration-timeout`, unmerged; see the first session-log entry.
+M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. M6.1 is merged on `main` through PR #4 (`24cee94`) and its acceptance-documentation PR #5 (`4158e6a`). M6.2 is merged on `main` through PR #6 (`6f949e0`). That merge's main CI run failed on a latent reconciliation query-plan defect, not on M6.2 code. The fix is on `fix/ci-integration-timeout` in [PR #7](https://github.com/adityaanantharaman16/SECRecon/pull/7), which is green on hosted CI and unmerged; see the first session-log entry.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -126,6 +126,7 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
   - Full gate run 2 (committed `83f7fc1`), same command with `-p secrecon-test-cifix2`:
     - **168 passed**, **91.67%** coverage, 86.95 s pytest (1m54 s wall), exit 0 (`full-gate-2.log`).
   - Host `.venv`: `ruff check .` passed; `ruff format --check .` reported 108 files formatted; `mypy src` found no issues in 43 files.
+  - Hosted CI on [PR #7](https://github.com/adityaanantharaman16/SECRecon/pull/7) at `8a3c153` passed both workflows on the push run [35887476061](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35887476061) and the pull-request run [35887525983](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35887525983). Each run passed 168 tests at 91.67% coverage. `test_recorded_sources.py` took 12.3/11.9 s (was up to 116 s) and `test_reconciliation.py` took 20.9/20.7 s (was up to 112 s).
   - Gate project deviation: the gate used fresh `secrecon-test-cifix1/2` projects instead of `-p secrecon-test`.
     - The existing `secrecon-test` volumes belong to an earlier session's credentials, so `migrate` failed with `password authentication failed`.
     - This unattended session may not run `down --volumes`. The attempt recreated that project's postgres/object-store containers on their existing volumes; no volume was removed.
@@ -140,8 +141,8 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
   - Only the integration suite was swept for other slow plans.
   - Diagnostic Compose projects are still running on this host and should be removed with `docker compose -p <name> -f compose.yaml -f compose.test.yaml down --volumes`, which this session was not permitted to run: `secrecon-ci-diag`, `secrecon-ci-plan1`, `secrecon-ci-plan2`, `secrecon-ci-red`, `secrecon-ci-sweep`, `secrecon-test-cifix1`, `secrecon-test-cifix2`. The pre-existing `secrecon-test` services are also running; stop them without `--volumes` unless their old data is no longer wanted.
 - Migration or configuration changes: none. A local ignored `.env` was generated in this worktree with `scripts/bootstrap.py`.
-- Next concrete task: owner review of the PR, and hosted CI green on the PR and again on `main` after any merge. Then M6.3 as below.
-- Commit or PR: `83f7fc1` (fix plus regression test) and this documentation commit on `fix/ci-integration-timeout`. The PR is listed in the task handoff. Not merged.
+- Next concrete task: owner review and merge decision on [PR #7](https://github.com/adityaanantharaman16/SECRecon/pull/7); after any merge, confirm that the `main` CI run is green. Then M6.3 as below.
+- Commit or PR: `83f7fc1` (fix plus regression test), `8a3c153` (documentation) and a hosted-evidence documentation commit on `fix/ci-integration-timeout`, in [PR #7](https://github.com/adityaanantharaman16/SECRecon/pull/7). Not merged.
 
 ### 2026-09-23 (later): M6.2 acceptance run recorded, test gate repaired and passing
 
