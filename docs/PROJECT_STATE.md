@@ -1,12 +1,12 @@
 # SECRecon: current project state
 
-Last updated: 2026-09-22.
+Last updated: 2026-09-23.
 
 Moving machines or agents? Start with the consolidated [implementation handoff and deployment roadmap](IMPLEMENTATION_HANDOFF.md), then use this file for the latest checkpoint.
 
 ## Current position
 
-**Phase:** M0–M5 and M6.1 complete; M6.2 performance baselines are next.
+**Phase:** M0–M5 and M6.1 complete; M6.2 performance baseline in progress (harness committed; first guide-sized run recorded, soak memory target missed and under investigation).
 
 M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6.1's isolated failure gate also passes. The latest full isolated suite passes **111 tests** with **91.67%** combined statement/branch coverage of domain and job modules. M6.2–M7 remain planned. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest hosted result.
 
@@ -69,6 +69,38 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - M5 contracts: [operations and observability](adr/0004-operations-and-observability.md), [connected UI walkthrough](runbooks/OPERATIONS_UI.md).
 
 ## Session log
+
+### 2026-09-23: M6.2 performance baseline harness and first guide-sized run (in progress)
+
+- What now works:
+  - `scripts/performance_baseline.py` (host) with `scripts/performance_probe.py` (in-stack) measures:
+    - 1- vs 4-worker replay of the frozen 100,000-observation synthetic dataset, with digest plus row-level `EXCEPT ALL` equivalence and a sequential-rebuild baseline;
+    - cold and warm open-loop read latency at 20 req/s for 10 minutes each;
+    - SIGKILL lease-recovery timing, judged from SQL;
+    - a 30-minute fixed-rate soak with pre-declared bounded-growth checks.
+  - It runs only in generated `secrecon-perf-*` Compose projects and refuses `secrecon`, `secrecon-test`, `secrecon-drill-*` and everything else with exit 2.
+  - `scripts/performance_summary.py` writes allowlisted, credential-checked summaries for commit.
+- Files and architecture: new scripts and unit tests. `scripts/service_drills.py` was refactored to share its isolation primitives (`validate_isolated_project`, `CommandRecorder`, `IsolatedCompose`) with the new harness; drill behaviour is unchanged. No ADR, migration, dependency, runtime configuration, processing semantics, provenance or decimal handling changed.
+- Checks run in this Hermes session. Host, venv Python 3.12:
+  - `ruff check .`: passed.
+  - `ruff format`: 38 files unchanged.
+  - `mypy --strict` on the four scripts: no issues.
+  - `pytest tests/unit`: 106 passed.
+- Docker on this host: 2 vCPU EPYC, 7.75 GiB, Docker 29.8.1.
+  - Smoke run (`--companies 5 --filings-per-company 4 --facts-per-filing 10 …`): exit 0.
+  - Guide-sized run 1: exit 3 (correct, target missed). Replay 4 workers 50.7 s against 1 worker 82.0 s, digest match; read p95 cold 15.9 ms / warm 15.7 ms, 0 errors; recovery 61.0 s × 3; soak correct, but PostgreSQL container memory grew from 312 to 648 MiB while the database grew to 4.54 GB. See [M6 evidence](evidence/M6.md).
+  - Run 1 was measured before the harness commit, so it is supporting evidence only.
+  - Smoke runs found four harness bugs, fixed before the timed runs.
+- What the owner should try: `python scripts/performance_baseline.py --project secrecon` (refused), then `python scripts/performance_baseline.py --project secrecon-perf-<name>` (about 58 minutes, or pass smaller `--companies`/`--read-seconds`/`--soak-seconds` for a smoke run).
+- Concept: two cashiers counting the same till must agree to the cent (digest), and an auditor then recounts line by line (`EXCEPT ALL`). Speed only counts after both agree.
+- Known limitations: the soak memory miss is not yet explained with evidence. Guide-sized run 2 (from committed `886d177`, with reported-only cgroup memory breakdown) and the full isolated test gate were started unattended after this entry; their logs are the machine-local, ignored files `.local/performance/guide-run-2.log` and `.local/performance/test-gate.log` in this worktree. Timings are specific to this 2-vCPU host. Discovery-to-normalized lag is out of scope for fixtures.
+- Migration or configuration changes: none. A local ignored `.env` was generated with `scripts/bootstrap.py` in this worktree.
+- Next concrete task:
+  - Record run 2's verdicts and cgroup diagnostics, and the full test-gate pass count, coverage and duration.
+  - Commit `docs/evidence/performance/m6.2-guide-run-2.json`.
+  - Either prove the soak memory explanation and propose an evidence-backed revised rule, or keep the miss open.
+  - Then request review. M6.3 follows.
+- Commits: `886d177` (harness), `cdd1b8c` (summarizer) and this documentation commit on `feat/m6-performance-baseline`. No PR merge.
 
 ### 2026-09-22: M6.1 isolated failure harness completed
 
