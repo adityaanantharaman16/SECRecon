@@ -9,11 +9,17 @@ from sqlalchemy import text
 
 from secrecon.api.app import create_app
 from secrecon.db.generations import generation_report
-from secrecon.db.projections import ProjectionVersionChanged, apply_projection, process_source
-from secrecon.db.reconciliation import get_run, reconcile
+from secrecon.db.projections import (
+    ProjectionVersionChanged,
+    apply_projection,
+    process_source,
+    register_source,
+)
+from secrecon.db.reconciliation import get_run, observations, reconcile
 from secrecon.domain.types import canonical
 from secrecon.ingestion.adapters import SchemaError, parse
 from secrecon.orchestration.replay import digest, rebuild
+from secrecon.storage.archive import Manifest
 
 pytestmark = pytest.mark.integration
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "synthetic"
@@ -219,3 +225,125 @@ def test_late_snapshot_and_concurrent_comparisons_converge(engine, archive, gene
             )
             == 1
         )
+
+
+# One synthetic snapshot: two accessions of FACTS_PER_ACCESSION facts each. Every fact has
+# provenance from the snapshot event, every tenth also has a second locator, and every fact also
+# has provenance from an unrelated event. The volume is small, but the old join read about 2
+# million tuples for it.
+FACTS_PER_ACCESSION = 1000
+TARGET, OTHER = "0009999999-26-000001", "0009999999-26-000002"
+
+
+def _stats_manifest() -> Manifest:
+    return Manifest(
+        kind="facts",
+        cik="0009999999",
+        url="https://data.sec.gov/SYNTHETIC-PLAN-REGRESSION",
+        requested_at="2026-09-23T00:00:00Z",
+        fetched_at="2026-09-23T00:00:00Z",
+        status=200,
+        headers={},
+        sha256="0" * 64,
+        byte_length=0,
+        blob_key="blobs/sha256/" + "0" * 64,
+        correlation_id="plan-regression",
+    )
+
+
+def _write_snapshot(connection, generation, event, other_event):
+    connection.execute(
+        text("""
+        INSERT INTO facts(generation,fingerprint,cik,accession,concept,value,data)
+        SELECT :g, 'fp-' || lpad(i::text,6,'0'), '0009999999',
+          CASE WHEN i % 2 = 0 THEN :target ELSE :other END, 'Assets', i,
+          jsonb_build_object('concept','Assets','value',i::text,'n',i,
+            'accession',CASE WHEN i % 2 = 0 THEN :target ELSE :other END)
+        FROM generate_series(1, :n) AS i
+    """),
+        {"g": generation, "target": TARGET, "other": OTHER, "n": 2 * FACTS_PER_ACCESSION},
+    )
+    connection.execute(
+        text("""
+        INSERT INTO fact_provenance(generation,fingerprint,event_id,locator,parser_version)
+        SELECT :g, fingerprint, :event, 'loc-1', 'sec-json-v1' FROM facts WHERE generation=:g
+        UNION ALL
+        SELECT :g, fingerprint, :event, 'loc-2', 'sec-json-v1' FROM facts
+          WHERE generation=:g AND (data->>'n')::int % 10 = 0
+        UNION ALL
+        SELECT :g, fingerprint, :other_event, 'loc-1', 'sec-json-v1' FROM facts WHERE generation=:g
+    """),
+        {"g": generation, "event": event, "other_event": other_event},
+    )
+
+
+def _tuples_read(connection):
+    return connection.scalar(
+        text("""
+        SELECT sum(coalesce(seq_tup_read,0) + coalesce(idx_tup_fetch,0))
+        FROM pg_stat_xact_user_tables WHERE relname IN ('facts','fact_provenance')
+    """)
+    )
+
+
+def test_snapshot_observations_stay_linear_when_statistics_predate_the_generation(
+    engine, generation
+):
+    """Regression for main CI run 35879892780 (statement timeout in observations()).
+
+    Projection reads a snapshot's observations in the same transaction that has just written
+    them, so planner statistics never describe that generation. The former facts/fact_provenance
+    join was then estimated at one row per side. It was planned as a nested loop with no join key
+    (`Join Filter: f.fingerprint = p.fingerprint`), so the tuples it read grew with the product
+    of the snapshot sizes. This test counts tuples read instead of timing them, so it does not
+    depend on how fast the runner is.
+    """
+    event, other_event = _stats_manifest(), _stats_manifest()
+    background = "test-stats-" + uuid4().hex
+    with engine.begin() as connection:
+        register_source(connection, event)
+        register_source(connection, other_event)
+        connection.execute(
+            text("INSERT INTO generations(name,parser_version) VALUES (:n,'sec-json-v1')"),
+            {"n": background},
+        )
+        _write_snapshot(connection, background, event.event_id, other_event.event_id)
+    # This is the state autovacuum leaves behind: statistics describe earlier generations only.
+    with engine.begin() as connection:
+        connection.execute(text("ANALYZE facts"))
+        connection.execute(text("ANALYZE fact_provenance"))
+    with engine.begin() as connection:
+        _write_snapshot(connection, generation, event.event_id, other_event.event_id)
+        estimate = connection.scalar(
+            text("EXPLAIN (FORMAT JSON) SELECT 1 FROM facts WHERE generation=:g"),
+            {"g": generation},
+        )[0]["Plan"]["Plan Rows"]
+        # Precondition: the planner really cannot see this generation (actual rows: 2000).
+        assert estimate <= 2 * FACTS_PER_ACCESSION / 10, estimate
+        before = _tuples_read(connection)
+        rows = observations(connection, generation, TARGET, event.event_id)
+        read = _tuples_read(connection) - before
+        table_rows = connection.scalar(
+            text("SELECT (SELECT count(*) FROM facts) + (SELECT count(*) FROM fact_provenance)")
+        )
+    expected = sorted(
+        (
+            {
+                "concept": "Assets",
+                "value": str(n),
+                "n": n,
+                "accession": TARGET,
+                "fingerprint": f"fp-{n:06d}",
+                "locator": locator,
+                "event_id": event.event_id,
+                "parser_version": "sec-json-v1",
+            }
+            for n in range(2, 2 * FACTS_PER_ACCESSION + 1, 2)
+            for locator in (("loc-1", "loc-2") if n % 10 == 0 else ("loc-1",))
+        ),
+        key=lambda row: (row["fingerprint"], row["locator"]),
+    )
+    assert rows == expected
+    # Any plan that reads each table at most once satisfies this. The old join read about 2M
+    # tuples against a bound of about 10k when this test runs alone.
+    assert read <= table_rows, (read, table_rows)

@@ -36,22 +36,29 @@ def observations(
 ) -> list[dict[str, Any]]:
     if not event_id:
         return []
+    # Two single-table index lookups, deliberately not a join. Projection calls this inside the
+    # transaction that has just written these rows, so planner statistics cannot describe them.
+    # A facts/fact_provenance join was estimated at one row per side and planned as a nested
+    # loop without a join key, quadratic in snapshot size. Each lookup below reads at most one
+    # generation's rows, whatever the statistics say.
+    facts: dict[str, dict[str, Any]] = {
+        row.fingerprint: row.data
+        for row in connection.execute(
+            text("SELECT fingerprint,data FROM facts WHERE generation=:g AND accession=:acc"),
+            {"g": generation, "acc": accession},
+        )
+    }
+    if not facts:
+        return []
     rows = connection.execute(
         text("""
-        SELECT f.data,f.fingerprint,p.locator,p.event_id,p.parser_version
-        FROM facts f JOIN fact_provenance p USING(generation,fingerprint)
-        WHERE f.generation=:g AND f.accession=:acc AND p.event_id=:id
-        ORDER BY f.fingerprint,p.locator
+        SELECT fingerprint,locator,event_id,parser_version FROM fact_provenance
+        WHERE generation=:g AND event_id=:id AND fingerprint=ANY(:fps)
+        ORDER BY fingerprint,locator
     """),
-        {"g": generation, "acc": accession, "id": event_id},
+        {"g": generation, "id": event_id, "fps": list(facts)},
     ).mappings()
-    return [
-        {
-            **row["data"],
-            **{k: row[k] for k in ("fingerprint", "locator", "event_id", "parser_version")},
-        }
-        for row in rows
-    ]
+    return [{**facts[row["fingerprint"]], **row} for row in rows]
 
 
 def evidence(
