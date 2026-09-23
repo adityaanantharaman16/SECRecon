@@ -122,11 +122,32 @@ def test_every_measured_phase_is_a_valid_probe_command(monkeypatch, tmp_path):
     assert all(hasattr(args, "companies") for name, args in parsed if name != "compare")
 
 
+# These files define how the ``secrecon:test`` image and Compose stack are
+# built, but the Dockerfile deliberately does not copy them into the image.
+# They remain provenance inputs: editing any of them changes what was measured.
+BUILD_DEFINITION_INPUTS = ("Dockerfile", "compose.yaml", "compose.test.yaml")
+
+
+def test_image_inputs_keep_build_definition_files():
+    """Provenance must not shrink to whatever happens to be copied into the image."""
+    assert set(BUILD_DEFINITION_INPUTS) <= set(baseline.IMAGE_INPUTS)
+    assert {"scripts", "src", "tests", "uv.lock"} <= set(baseline.IMAGE_INPUTS)
+
+
 def test_recorded_image_inputs_exist():
-    """Tree-cleanliness provenance must cover real paths, including this harness."""
+    """Tree-cleanliness provenance must cover real paths, including this harness.
+
+    The host harness runs ``git status`` over these paths in a source checkout,
+    where every one must exist. The full Docker gate runs this test from
+    ``/app`` inside the test image (``.dockerignore`` excludes ``.git``), where
+    only the uncopied build-definition files may be absent.
+    """
     root = Path(__file__).resolve().parents[2]
-    assert all((root / path).exists() for path in baseline.IMAGE_INPUTS)
-    assert "scripts" in baseline.IMAGE_INPUTS and "src" in baseline.IMAGE_INPUTS
+    missing = {path for path in baseline.IMAGE_INPUTS if not (root / path).exists()}
+    if (root / ".git").exists():
+        assert not missing
+    else:
+        assert missing <= set(BUILD_DEFINITION_INPUTS)
 
 
 def test_cli_refuses_development_project_before_docker_runs():
