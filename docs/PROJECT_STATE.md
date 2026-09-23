@@ -6,13 +6,21 @@ Moving machines or agents? Start with the consolidated [implementation handoff a
 
 ## Current position
 
-**Phase:** M0–M5 and M6.1 complete; M6.2 performance baseline in progress (harness committed; first guide-sized run recorded, soak memory target missed and under investigation).
+**Phase:** M0–M5 and M6.1 complete. M6.2 performance-baseline evidence is recorded and awaiting review: 3 of 4 targets met, and the soak memory target is honestly missed with an evidence-backed explanation and a proposed revised rule. M6.3 is next.
 
-M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6.1's isolated failure gate also passes. The latest full isolated suite passes **111 tests** with **91.67%** combined statement/branch coverage of domain and job modules. M6.2–M7 remain planned. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest hosted result.
+M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6.1's isolated failure gate also passes. The latest full isolated suite, run on the Hermes Docker host at `fae3fdc` on 2026-09-23, passes **167 tests** with **91.67%** combined statement/branch coverage of domain and job modules. M6.3 and M7 remain planned. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest hosted result.
 
-M6.1 now has a fixture-driven isolated failure harness, SQL invariant/trace/timing reports and a hard Compose-project refusal safeguard. The owner ran three consecutive clean isolated drills, confirmed the refusal against `secrecon`, and passed the full 111-test Docker gate at 91.67% coverage. See [M6 evidence](evidence/M6.md).
+M6.1 now has a fixture-driven isolated failure harness, SQL invariant/trace/timing reports and a hard Compose-project refusal safeguard. The owner ran three consecutive clean isolated drills, confirmed the refusal against `secrecon`, and passed the full 111-test Docker gate at 91.67% coverage.
 
-M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. Subsequent documentation commits do not change that implementation baseline. The current M6.1 work remains unmerged on its feature branch.
+M6.2 adds an isolated performance harness. Its guide-sized acceptance run measured:
+- 4-worker replay of 100,000 synthetic observations in 49.6 s, with a digest identical to the 1-worker run;
+- read p95 of 15.5 ms cold and 15.3 ms warm, with 0 errors;
+- crash recovery in 61.0 s, three times;
+- a 30-minute soak that stayed correct and bounded except for PostgreSQL page cache tracking a deliberately growing database.
+
+See [M6 evidence](evidence/M6.md).
+
+M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. M6.1 is merged on `main` through PR #4 (`24cee94`) and its acceptance-documentation PR #5 (`4158e6a`). M6.2 is unmerged on `feat/m6-performance-baseline`.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -26,14 +34,19 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
 | M4: reconciliation | Complete | [M4 evidence](evidence/M4.md); 79 tests pass |
 | M5: operations | Complete | [M5 evidence](evidence/M5.md); 94 tests, tracing smoke and alert gates |
-| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md); M6.1 complete, M6.2 performance baseline and M6.3 recovery report remain |
+| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md). M6.1 complete. M6.2 evidence recorded and in review (replay, reads and recovery met; soak memory missed, explained, revised rule proposed). M6.3 still needs the recovery report and limitations, three consecutive full drill-matrix runs, and a soak-rule decision. |
 | M7: release and handoff | Not started | Local release, restore, rollback and case study |
 
 Allowed status values: Not started, In progress, Blocked, Complete. Link evidence when changing status; do not infer completion from time spent.
 
 ## First implementation task
 
-M6.2 performance baselines are next. Freeze the documented synthetic dataset and machine resources, then measure replay throughput and digest equivalence, indexed API latency/error rate, crash-recovery time, queue drain, memory and bounded telemetry behavior against the proposed budgets in `docs/PROJECT_GUIDE.md`. Publish actual results and identify the bottleneck; do not hide a missed target or weaken correctness. M6.1 is complete, but M6 remains **In progress** until the performance baseline and recovery report are recorded. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
+M6.3 (report and milestone gate) is next, after review of M6.2 and a decision on the proposed soak memory rule in [M6 evidence](evidence/M6.md).
+- If the rule is approved, gate soak memory for stateful containers on cgroup `anon + shmem`, report page cache as context, and rerun one guide-sized baseline.
+- Run the full required failure matrix in `docs/PROJECT_GUIDE.md` three consecutive local times, keeping per-run records. The M6.1 drill harness currently scripts only the database-outage/object-store-restart scenario (`tests/fixtures/failure_drills/`). Map each other matrix row to a scripted drill or an existing integration test (for example `tests/integration/test_crashes.py`, `test_worker_failures.py`) before claiming it.
+- Write the consolidated failure/benchmark report, bottleneck analysis and limitations.
+
+Do not hide a missed target or weaken correctness. M6 remains **In progress** until M6.3's gate passes. The connected UI is served on port 8000; the separate `demo/` on 8010 remains fictional.
 
 Start by checking Git status and Docker readiness, then record the exact reference-machine resources used for benchmarks. The owner's Docker workstation has Python 3.12.14 in `.venv`, Python 3.13 via `py`, and Docker Desktop 4.86.0 with the Linux engine; Docker provides about 16 GB memory. The repository uses `main` with milestone commits; `origin` is `https://github.com/adityaanantharaman16/SECRecon.git`. Branch names must exclude `codex`; use descriptive prefixes such as `feat/`, `fix/`, `test/` or `docs/`. Host `uv` was initially bootstrapped into ignored `.tools`; the Docker workflow does not depend on that host tool remaining available.
 
@@ -59,6 +72,7 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - Synthetic demo: `docker compose run --build --rm test python scripts/seed_demo.py`.
 - Full gate: `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test`.
 - Actual dependency drill: `python scripts/service_drills.py --project secrecon-drill-m6-gate --runs 3` (isolated test-only project; hard refusal outside `secrecon-drill-*`).
+- Performance baseline: `python scripts/performance_baseline.py --project secrecon-perf-m6-baseline`. It runs guide-sized in about 58 minutes and has a hard refusal outside `secrecon-perf-*`. Summarize a report for commit with `python scripts/performance_summary.py <report.json> <summary.json>`.
 - Connected UI: `http://localhost:8000`; operator controls require `SECRECON_ADMIN_TOKEN` from ignored `.env`. API docs: `http://localhost:8000/docs`, with local assets and bearer authorization.
 - Optional diagnostics: `docker compose -f compose.yaml -f compose.observability.yaml --profile observability up -d --build`; Grafana at `http://localhost:3000`, Prometheus at `http://localhost:9090`.
 - Reconciliation: `docker compose exec api secrecon reconcile links --refresh` for existing pre-M4 data, then `GET /v1/amendments` and `GET /v1/reconciliations/{id}`. New projections update comparisons automatically.
@@ -69,6 +83,40 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - M5 contracts: [operations and observability](adr/0004-operations-and-observability.md), [connected UI walkthrough](runbooks/OPERATIONS_UI.md).
 
 ## Session log
+
+### 2026-09-23 (later): M6.2 acceptance run recorded, test gate repaired and passing
+
+- Date / milestone / slice: 2026-09-23, M6, M6.2 performance baseline (evidence completion).
+- What now works:
+  - Guide-sized run 2 ran from committed harness `886d177` with a clean image-input tree. It is the M6.2 acceptance run; exit 3 means correct, one target missed.
+    - Replay: 4 workers 49.6 s vs 1 worker 82.8 s. Digest `9be5c25b…d16ae` is identical for 1-worker, 4-worker and rebuild, and `EXCEPT ALL` shows 0 differing rows.
+    - Reads at 20 req/s × 600 s: p95 15.53 ms cold / 15.31 ms warm, 0 errors, max page 100.
+    - Recovery under a 60 s lease: 61.0 s × 3, each `lease_expired`→`succeeded` with tokens 1→2.
+    - Soak: 21,778 jobs, all succeeded. Drain 12.09 jobs/s, backlog cleared 1.0 s after load stopped, peak worker RSS 125.2 MiB.
+  - The soak memory miss now has an evidence-backed explanation. PostgreSQL cgroup `anon` stayed at 17.7→17.8 MiB and `shmem` at 140.4→140.6 MiB (medians). The growth in `docker stats` usage (251→354 MiB, early/late max) is `active_file` page cache over a database that the soak deliberately grows from 0.59 to 4.61 GB. The verdict stays **TARGET MISSED**, and a revised rule (gate `anon + shmem`, report page cache) is proposed for review, not applied.
+  - The full isolated test gate is green again.
+- Files and architecture decisions changed:
+  - `tests/unit/test_performance_baseline.py` (commit `fae3fdc`). The image-input existence test assumed a source checkout. The Docker gate runs it inside `secrecon:test`, where `Dockerfile`, `compose.yaml` and `compose.test.yaml` are intentionally absent. The test was fixed, and `IMAGE_INPUTS` and the `Dockerfile` were deliberately left unchanged. A new test pins that provenance keeps those build-definition files.
+  - Docs: `docs/evidence/M6.md`, this file, and the committed allowlisted summary `docs/evidence/performance/m6.2-guide-run-2.json`.
+  - No harness, probe, `src`, migration, dependency, Compose or ADR change.
+- Checks run, all in this Hermes session on the 2 vCPU / 7.75 GiB Docker 29.8.1 host:
+  - `docker compose -p secrecon-test -f compose.yaml -f compose.test.yaml run --build --rm test` at `fae3fdc`: **167 passed**, **91.67%** coverage, 178.72 s pytest (227 s wall including build), exit 0. Log: `.local/performance/test-gate-2.log`, ignored.
+  - The earlier unattended gate at `358f5dc` failed (`1 failed, 165 passed`). That failure is the test bug fixed above. Log: `.local/performance/test-gate.log`.
+  - Host `.venv`: `ruff check .` passed; `ruff format --check .` 108 files formatted; `mypy src` no issues in 43 files; `MYPYPATH=src mypy --strict --explicit-package-bases` on the four harness scripts no issues; `pytest tests/unit` 107 passed.
+  - Guide-sized run 2: `python scripts/performance_baseline.py --project secrecon-perf-m6-baseline`, 3,496.6 s, exit 3. Raw report `.local/performance/20260923T044910Z-perf-3fada9f8c50b49e4ad92f1e156b1b007.json` (ignored; SHA-256 recorded in the committed summary).
+- What the owner should try:
+  - Open `docs/evidence/performance/m6.2-guide-run-2.json` and compare `results.replay_single.digest` with `results.replay_four.digest`.
+  - Read `verdicts[3].details.diagnostics_not_gated` to see flat PostgreSQL `anon`/`shmem` beside growing `active_file`.
+  - Decide whether to accept the proposed soak memory rule.
+- Concept to explain in plain language: a warehouse's floor space looked like it was "leaking" because it kept filling up. It turned out the staff (process memory) and the fixed shelving (shared buffers) never grew. The extra space was the loading dock holding recently delivered boxes (page cache), and the test kept ordering new stock on purpose. The fix is to measure staff and shelving, not the dock.
+- Known limitations / blocked work:
+  - Timings apply to this 2-vCPU host only.
+  - The page-cache explanation is not a proof of boundedness under indefinite growth, because no container memory limit was exercised.
+  - Discovery-to-normalized lag is out of scope for fixtures.
+  - No PR was opened by earlier runs because `gh` is not installed; this session uses the GitHub REST API instead (see Commit or PR below).
+- Migration or configuration changes: none.
+- Next concrete task: review M6.2. Then do M6.3: decide the soak rule and, if approved, implement it and rerun one baseline; run the full failure matrix three consecutive times; write the consolidated report and limitations.
+- Commit or PR: `fae3fdc` (test fix) plus this documentation commit on `feat/m6-performance-baseline`. The PR is listed in the task handoff. Not merged.
 
 ### 2026-09-23: M6.2 performance baseline harness and first guide-sized run (in progress)
 

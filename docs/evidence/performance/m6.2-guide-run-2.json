@@ -1,0 +1,2194 @@
+{
+ "cleanup_error": null,
+ "commands": [
+  {
+   "command": [
+    "docker",
+    "ps",
+    "-aq",
+    "--filter",
+    "label=com.docker.compose.project=secrecon-perf-m6-baseline-e4d82a48b8"
+   ],
+   "duration_seconds": 0.017,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "volume",
+    "ls",
+    "-q",
+    "--filter",
+    "label=com.docker.compose.project=secrecon-perf-m6-baseline-e4d82a48b8"
+   ],
+   "duration_seconds": 0.021,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "network",
+    "ls",
+    "-q",
+    "--filter",
+    "label=com.docker.compose.project=secrecon-perf-m6-baseline-e4d82a48b8"
+   ],
+   "duration_seconds": 0.021,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "git",
+    "rev-parse",
+    "HEAD"
+   ],
+   "duration_seconds": 0.004,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "version",
+    "--format",
+    "{{.Server.Version}}"
+   ],
+   "duration_seconds": 0.029,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "version",
+    "--short"
+   ],
+   "duration_seconds": 0.056,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "info",
+    "--format",
+    "{{.NCPU}}|{{.MemTotal}}|{{.OperatingSystem}}|{{.Architecture}}"
+   ],
+   "duration_seconds": 0.05,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--build",
+    "--rm",
+    "test",
+    "python",
+    "-c",
+    "print('performance baseline dependencies ready')"
+   ],
+   "duration_seconds": 13.023,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "image",
+    "inspect",
+    "secrecon:test",
+    "--format",
+    "{{.Id}}"
+   ],
+   "duration_seconds": 0.054,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "git",
+    "status",
+    "--porcelain",
+    "--untracked-files=all",
+    "--",
+    "Dockerfile",
+    "compose.yaml",
+    "compose.test.yaml",
+    "pyproject.toml",
+    "uv.lock",
+    "alembic.ini",
+    "src",
+    "migrations",
+    "scripts",
+    "tests"
+   ],
+   "duration_seconds": 0.004,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "seed",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1"
+   ],
+   "duration_seconds": 7.609,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "replay",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--workers",
+    "1",
+    "--label",
+    "single",
+    "--limit-seconds",
+    "1800"
+   ],
+   "duration_seconds": 90.183,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "replay",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--workers",
+    "4",
+    "--label",
+    "four",
+    "--limit-seconds",
+    "1800"
+   ],
+   "duration_seconds": 57.612,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "rebuild",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--label",
+    "rebuild"
+   ],
+   "duration_seconds": 84.418,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "compare",
+    "single",
+    "four",
+    "rebuild"
+   ],
+   "duration_seconds": 5.337,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "restart",
+    "postgres"
+   ],
+   "duration_seconds": 0.588,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "up",
+    "-d",
+    "--wait",
+    "--wait-timeout",
+    "120",
+    "postgres"
+   ],
+   "duration_seconds": 2.206,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "load",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--generation-label",
+    "four",
+    "--rps",
+    "20.0",
+    "--cold-seconds",
+    "600.0",
+    "--warm-seconds",
+    "600.0",
+    "--plans"
+   ],
+   "duration_seconds": 1204.226,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "recovery",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--trial",
+    "1",
+    "--limit-seconds",
+    "300"
+   ],
+   "duration_seconds": 65.766,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "recovery",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--trial",
+    "2",
+    "--limit-seconds",
+    "300"
+   ],
+   "duration_seconds": 65.815,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "recovery",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--trial",
+    "3",
+    "--limit-seconds",
+    "300"
+   ],
+   "duration_seconds": 65.818,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "run",
+    "--no-deps",
+    "--rm",
+    "test",
+    "python",
+    "scripts/performance_probe.py",
+    "soak",
+    "--companies",
+    "100",
+    "--filings-per-company",
+    "10",
+    "--facts-per-filing",
+    "100",
+    "--duplicate-ratio",
+    "0.1",
+    "--workers",
+    "4",
+    "--seconds",
+    "1800.0",
+    "--rate",
+    "12.1",
+    "--sample-seconds",
+    "15",
+    "--reference-digest",
+    "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae"
+   ],
+   "duration_seconds": 1828.058,
+   "returncode": 0
+  },
+  {
+   "command": [
+    "docker",
+    "compose",
+    "-p",
+    "secrecon-perf-m6-baseline-e4d82a48b8",
+    "-f",
+    "compose.yaml",
+    "-f",
+    "compose.test.yaml",
+    "down",
+    "--volumes",
+    "--remove-orphans"
+   ],
+   "duration_seconds": 3.04,
+   "returncode": 0
+  }
+ ],
+ "container_stats_by_phase": {
+  "load": {
+   "object-store": {
+    "cpu_max_percent": 2.0,
+    "cpu_mean_percent": 0.4,
+    "memory_max_bytes": 340577484,
+    "samples": 68
+   },
+   "postgres": {
+    "cpu_max_percent": 12.1,
+    "cpu_mean_percent": 7.4,
+    "memory_max_bytes": 131072000,
+    "samples": 68
+   },
+   "redis": {
+    "cpu_max_percent": 3.6,
+    "cpu_mean_percent": 1.9,
+    "memory_max_bytes": 4423942,
+    "samples": 68
+   },
+   "test": {
+    "cpu_max_percent": 18.9,
+    "cpu_mean_percent": 13.1,
+    "memory_max_bytes": 231315865,
+    "samples": 68
+   }
+  },
+  "rebuild": {
+   "object-store": {
+    "cpu_max_percent": 8.5,
+    "cpu_mean_percent": 5.1,
+    "memory_max_bytes": 340682342,
+    "samples": 5
+   },
+   "postgres": {
+    "cpu_max_percent": 86.8,
+    "cpu_mean_percent": 49.2,
+    "memory_max_bytes": 208876339,
+    "samples": 5
+   },
+   "redis": {
+    "cpu_max_percent": 3.3,
+    "cpu_mean_percent": 1.5,
+    "memory_max_bytes": 4391436,
+    "samples": 5
+   },
+   "test": {
+    "cpu_max_percent": 62.0,
+    "cpu_mean_percent": 60.1,
+    "memory_max_bytes": 214748364,
+    "samples": 5
+   }
+  },
+  "recovery-1": {
+   "object-store": {
+    "cpu_max_percent": 0.5,
+    "cpu_mean_percent": 0.4,
+    "memory_max_bytes": 130128281,
+    "samples": 4
+   },
+   "postgres": {
+    "cpu_max_percent": 6.2,
+    "cpu_mean_percent": 2.5,
+    "memory_max_bytes": 129079705,
+    "samples": 4
+   },
+   "redis": {
+    "cpu_max_percent": 3.6,
+    "cpu_mean_percent": 2.6,
+    "memory_max_bytes": 4325376,
+    "samples": 4
+   },
+   "test": {
+    "cpu_max_percent": 0.9,
+    "cpu_mean_percent": 0.8,
+    "memory_max_bytes": 195769139,
+    "samples": 4
+   }
+  },
+  "recovery-2": {
+   "object-store": {
+    "cpu_max_percent": 0.6,
+    "cpu_mean_percent": 0.6,
+    "memory_max_bytes": 130128281,
+    "samples": 3
+   },
+   "postgres": {
+    "cpu_max_percent": 7.3,
+    "cpu_mean_percent": 4.8,
+    "memory_max_bytes": 129603993,
+    "samples": 3
+   },
+   "redis": {
+    "cpu_max_percent": 3.1,
+    "cpu_mean_percent": 1.2,
+    "memory_max_bytes": 4333764,
+    "samples": 3
+   },
+   "test": {
+    "cpu_max_percent": 0.9,
+    "cpu_mean_percent": 0.8,
+    "memory_max_bytes": 195559424,
+    "samples": 3
+   }
+  },
+  "recovery-3": {
+   "object-store": {
+    "cpu_max_percent": 0.5,
+    "cpu_mean_percent": 0.4,
+    "memory_max_bytes": 130128281,
+    "samples": 4
+   },
+   "postgres": {
+    "cpu_max_percent": 7.0,
+    "cpu_mean_percent": 4.5,
+    "memory_max_bytes": 129918566,
+    "samples": 4
+   },
+   "redis": {
+    "cpu_max_percent": 3.4,
+    "cpu_mean_percent": 1.8,
+    "memory_max_bytes": 4464836,
+    "samples": 4
+   },
+   "test": {
+    "cpu_max_percent": 98.1,
+    "cpu_mean_percent": 25.1,
+    "memory_max_bytes": 195559424,
+    "samples": 4
+   }
+  },
+  "replay-four": {
+   "object-store": {
+    "cpu_max_percent": 7.0,
+    "cpu_mean_percent": 6.7,
+    "memory_max_bytes": 333132595,
+    "samples": 3
+   },
+   "postgres": {
+    "cpu_max_percent": 72.8,
+    "cpu_mean_percent": 68.4,
+    "memory_max_bytes": 200278016,
+    "samples": 3
+   },
+   "redis": {
+    "cpu_max_percent": 3.7,
+    "cpu_mean_percent": 2.9,
+    "memory_max_bytes": 4439670,
+    "samples": 3
+   },
+   "test": {
+    "cpu_max_percent": 116.9,
+    "cpu_mean_percent": 115.7,
+    "memory_max_bytes": 490209280,
+    "samples": 3
+   }
+  },
+  "replay-single": {
+   "object-store": {
+    "cpu_max_percent": 4.3,
+    "cpu_mean_percent": 4.0,
+    "memory_max_bytes": 323695411,
+    "samples": 5
+   },
+   "postgres": {
+    "cpu_max_percent": 44.9,
+    "cpu_mean_percent": 41.0,
+    "memory_max_bytes": 177943347,
+    "samples": 5
+   },
+   "redis": {
+    "cpu_max_percent": 3.9,
+    "cpu_mean_percent": 2.5,
+    "memory_max_bytes": 4346347,
+    "samples": 5
+   },
+   "test": {
+    "cpu_max_percent": 65.8,
+    "cpu_mean_percent": 61.3,
+    "memory_max_bytes": 199858585,
+    "samples": 5
+   }
+  },
+  "seed": {
+   "object-store": {
+    "cpu_max_percent": 53.8,
+    "cpu_mean_percent": 53.8,
+    "memory_max_bytes": 156971827,
+    "samples": 1
+   },
+   "postgres": {
+    "cpu_max_percent": 0.0,
+    "cpu_mean_percent": 0.0,
+    "memory_max_bytes": 27189575,
+    "samples": 1
+   },
+   "redis": {
+    "cpu_max_percent": 0.2,
+    "cpu_mean_percent": 0.2,
+    "memory_max_bytes": 3944742,
+    "samples": 1
+   },
+   "test": {
+    "cpu_max_percent": 87.6,
+    "cpu_mean_percent": 87.6,
+    "memory_max_bytes": 118803660,
+    "samples": 1
+   }
+  },
+  "soak": {
+   "object-store": {
+    "cpu_max_percent": 6.3,
+    "cpu_mean_percent": 3.1,
+    "memory_max_bytes": 339528908,
+    "samples": 103
+   },
+   "postgres": {
+    "cpu_max_percent": 87.2,
+    "cpu_mean_percent": 42.8,
+    "memory_max_bytes": 408630067,
+    "samples": 103
+   },
+   "redis": {
+    "cpu_max_percent": 4.2,
+    "cpu_mean_percent": 2.0,
+    "memory_max_bytes": 8839495,
+    "samples": 103
+   },
+   "test": {
+    "cpu_max_percent": 108.8,
+    "cpu_mean_percent": 57.9,
+    "memory_max_bytes": 518625689,
+    "samples": 103
+   }
+  }
+ },
+ "container_stats_errors": 0,
+ "duration_seconds": 3496.559,
+ "environment": {
+  "compose_version": "5.5.1",
+  "container_resource_limits": "none set by compose.yaml/compose.test.yaml",
+  "docker_architecture": "x86_64",
+  "docker_cpu_count": 2,
+  "docker_memory_bytes": 8326631424,
+  "docker_operating_system": "Ubuntu 24.04.5 LTS",
+  "docker_version": "29.8.1",
+  "git_commit": "886d177b22086250fe2f47dbbae3717015f2f605",
+  "git_image_inputs_clean": true,
+  "git_image_inputs_uncommitted": [],
+  "host_loadavg_at_start": "0.72 1.01 1.29 7/326 10916",
+  "python": "3.12.13 (main, Apr  7 2026, 20:45:25) [Clang 22.1.1 ]",
+  "test_image_id": "sha256:4b5236c8985441063cfa207729a6047c1bc4097a594294c2d273d267f4dd46fd"
+ },
+ "exit_status": 3,
+ "failure": null,
+ "finished_at": "2026-09-23T05:47:26.925406+00:00",
+ "guide_sized": true,
+ "parameters": {
+  "companies": 100,
+  "duplicate_ratio": 0.1,
+  "facts_per_filing": 100,
+  "filings_per_company": 10,
+  "project": "secrecon-perf-m6-baseline",
+  "read_rps": 20.0,
+  "read_seconds": 600.0,
+  "recovery_limit_seconds": 300,
+  "recovery_trials": 3,
+  "replay_limit_seconds": 1800,
+  "report_dir": ".local/performance",
+  "sample_seconds": 15,
+  "skip_rebuild": false,
+  "soak_rate": null,
+  "soak_seconds": 1800.0,
+  "stats_seconds": 15,
+  "workers": 4
+ },
+ "phase_seconds": {
+  "compare": 5.337,
+  "load": 1204.226,
+  "rebuild": 84.418,
+  "recovery-1": 65.766,
+  "recovery-2": 65.815,
+  "recovery-3": 65.818,
+  "replay-four": 57.612,
+  "replay-single": 90.184,
+  "seed": 7.609,
+  "soak": 1828.058
+ },
+ "project": "secrecon-perf-m6-baseline-e4d82a48b8",
+ "requested_project": "secrecon-perf-m6-baseline",
+ "results": {
+  "compare": {
+   "generations": [
+    "perf-single",
+    "perf-four",
+    "perf-rebuild"
+   ],
+   "match": true,
+   "phase": "compare",
+   "reference": "perf-single",
+   "seconds": 3.193,
+   "tables": {
+    "four.amendment_links": {
+     "only_in_four": 0,
+     "only_in_single": 0,
+     "rows": 0
+    },
+    "four.companies": {
+     "only_in_four": 0,
+     "only_in_single": 0,
+     "rows": 100
+    },
+    "four.fact_provenance": {
+     "only_in_four": 0,
+     "only_in_single": 0,
+     "rows": 100000
+    },
+    "four.facts": {
+     "only_in_four": 0,
+     "only_in_single": 0,
+     "rows": 100000
+    },
+    "four.filing_sources": {
+     "only_in_four": 0,
+     "only_in_single": 0,
+     "rows": 2000
+    },
+    "four.filings": {
+     "only_in_four": 0,
+     "only_in_single": 0,
+     "rows": 1000
+    },
+    "rebuild.amendment_links": {
+     "only_in_rebuild": 0,
+     "only_in_single": 0,
+     "rows": 0
+    },
+    "rebuild.companies": {
+     "only_in_rebuild": 0,
+     "only_in_single": 0,
+     "rows": 100
+    },
+    "rebuild.fact_provenance": {
+     "only_in_rebuild": 0,
+     "only_in_single": 0,
+     "rows": 100000
+    },
+    "rebuild.facts": {
+     "only_in_rebuild": 0,
+     "only_in_single": 0,
+     "rows": 100000
+    },
+    "rebuild.filing_sources": {
+     "only_in_rebuild": 0,
+     "only_in_single": 0,
+     "rows": 2000
+    },
+    "rebuild.filings": {
+     "only_in_rebuild": 0,
+     "only_in_single": 0,
+     "rows": 1000
+    }
+   }
+  },
+  "load": {
+   "api_command": "python -m secrecon.cli serve --host 127.0.0.1 (single uvicorn process)",
+   "api_ready_seconds": 1.818,
+   "cold": {
+    "achieved_rps": 20.0,
+    "api_rss_bytes_max": 128057344,
+    "by_route": {
+     "company-list": {
+      "max_ms": 114.69,
+      "p50_ms": 8.1,
+      "p95_ms": 11.19,
+      "requests": 1200
+     },
+     "company-search": {
+      "max_ms": 74.6,
+      "p50_ms": 7.77,
+      "p95_ms": 10.67,
+      "requests": 1200
+     },
+     "fact-provenance": {
+      "max_ms": 38.39,
+      "p50_ms": 6.37,
+      "p95_ms": 8.74,
+      "requests": 1200
+     },
+     "facts-by-accession": {
+      "max_ms": 97.78,
+      "p50_ms": 8.7,
+      "p95_ms": 11.74,
+      "requests": 1200
+     },
+     "facts-by-cik-period": {
+      "max_ms": 93.31,
+      "p50_ms": 15.2,
+      "p95_ms": 20.3,
+      "requests": 1200
+     },
+     "facts-by-concept": {
+      "max_ms": 60.62,
+      "p50_ms": 9.12,
+      "p95_ms": 12.21,
+      "requests": 1200
+     },
+     "filing-detail": {
+      "max_ms": 39.81,
+      "p50_ms": 6.12,
+      "p95_ms": 8.81,
+      "requests": 1200
+     },
+     "filings-by-cik": {
+      "max_ms": 27.85,
+      "p50_ms": 6.94,
+      "p95_ms": 9.86,
+      "requests": 1200
+     },
+     "filings-by-form": {
+      "max_ms": 37.29,
+      "p50_ms": 8.06,
+      "p95_ms": 11.01,
+      "requests": 1200
+     },
+     "sources-by-cik": {
+      "max_ms": 29.8,
+      "p50_ms": 6.7,
+      "p95_ms": 9.17,
+      "requests": 1200
+     }
+    },
+    "duration_seconds": 600.0,
+    "error_rate": 0.0,
+    "errors": {},
+    "first_20_requests_max_ms": 93.31,
+    "label": "cold",
+    "max_items_per_page": 100,
+    "max_ms": 114.69,
+    "mean_ms": 8.72,
+    "offered_rps": 20.0,
+    "p50_ms": 7.82,
+    "p95_ms": 15.53,
+    "p99_ms": 19.54,
+    "per_minute_p95_ms": [
+     15.4,
+     14.63,
+     15.32,
+     15.73,
+     15.05,
+     14.87,
+     18.48,
+     15.67,
+     15.93,
+     15.11
+    ],
+    "requests": 12000,
+    "schedule_max_lag_ms": 14.47,
+    "wall_seconds": 599.997
+   },
+   "generation": "perf-four",
+   "query_plans": {
+    "facts_by_accession": [
+     "Limit (actual time=0.192..0.201 rows=100 loops=1)",
+     "  ->  Sort (actual time=0.191..0.194 rows=100 loops=1)",
+     "        Sort Key: fingerprint",
+     "        Sort Method: quicksort  Memory: 75kB",
+     "        ->  Index Scan using facts_search on facts t (actual time=0.039..0.080 rows=100 loops=1)",
+     "              Index Cond: ((generation = 'perf-four'::text) AND (accession = '0990000000-25-000001'::text) AND (fingerprint > ''::text))",
+     "Planning Time: 0.428 ms",
+     "Execution Time: 0.219 ms"
+    ],
+    "facts_by_cik_period": [
+     "Limit (actual time=0.075..8.449 rows=101 loops=1)",
+     "  ->  Index Scan using facts_period_page on facts t (actual time=0.075..8.438 rows=101 loops=1)",
+     "        Index Cond: ((generation = 'perf-four'::text) AND ((data ->> 'end_date'::text) = '2024-12-31'::text) AND (fingerprint > ''::text))",
+     "        Filter: (cik = '0990000000'::text)",
+     "        Rows Removed by Filter: 8512",
+     "Planning Time: 0.097 ms",
+     "Execution Time: 8.463 ms"
+    ],
+    "facts_by_concept": [
+     "Limit (actual time=0.028..0.251 rows=101 loops=1)",
+     "  ->  Index Scan using facts_concept_page on facts t (actual time=0.028..0.243 rows=101 loops=1)",
+     "        Index Cond: ((generation = 'perf-four'::text) AND (concept = 'SyntheticMetric00'::text) AND (fingerprint > ''::text))",
+     "Planning Time: 0.080 ms",
+     "Execution Time: 0.262 ms"
+    ],
+    "filings_by_cik": [
+     "Limit (actual time=0.059..0.061 rows=10 loops=1)",
+     "  ->  Sort (actual time=0.039..0.040 rows=10 loops=1)",
+     "        Sort Key: accession",
+     "        Sort Method: quicksort  Memory: 30kB",
+     "        ->  Bitmap Heap Scan on filings t (actual time=0.024..0.028 rows=10 loops=1)",
+     "              Recheck Cond: ((generation = 'perf-four'::text) AND (cik = '0990000000'::text) AND (accession > ''::text))",
+     "              Heap Blocks: exact=2",
+     "              ->  Bitmap Index Scan on filings_search (actual time=0.016..0.017 rows=10 loops=1)",
+     "                    Index Cond: ((generation = 'perf-four'::text) AND (cik = '0990000000'::text) AND (accession > ''::text))",
+     "Planning Time: 0.284 ms",
+     "Execution Time: 0.072 ms"
+    ],
+    "page_freshness": [
+     "Aggregate (actual time=0.989..0.990 rows=1 loops=1)",
+     "  ->  Hash Join (actual time=0.592..0.938 rows=1100 loops=1)",
+     "        Hash Cond: (p.event_id = s.event_id)",
+     "        ->  Seq Scan on processing_runs p (actual time=0.068..0.248 rows=1100 loops=1)",
+     "              Filter: ((generation = 'perf-four'::text) AND (status = 'succeeded'::text))",
+     "              Rows Removed by Filter: 2200",
+     "        ->  Hash (actual time=0.494..0.495 rows=1100 loops=1)",
+     "              Buckets: 2048  Batches: 1  Memory Usage: 99kB",
+     "              ->  Seq Scan on source_events s (actual time=0.011..0.324 rows=1100 loops=1)",
+     "Planning Time: 0.401 ms",
+     "Execution Time: 1.006 ms"
+    ]
+   },
+   "warm": {
+    "achieved_rps": 20.0,
+    "api_rss_bytes_max": 128098304,
+    "by_route": {
+     "company-list": {
+      "max_ms": 102.07,
+      "p50_ms": 8.13,
+      "p95_ms": 11.14,
+      "requests": 1200
+     },
+     "company-search": {
+      "max_ms": 64.93,
+      "p50_ms": 7.78,
+      "p95_ms": 10.32,
+      "requests": 1200
+     },
+     "fact-provenance": {
+      "max_ms": 18.83,
+      "p50_ms": 6.28,
+      "p95_ms": 8.28,
+      "requests": 1200
+     },
+     "facts-by-accession": {
+      "max_ms": 119.69,
+      "p50_ms": 8.73,
+      "p95_ms": 11.66,
+      "requests": 1200
+     },
+     "facts-by-cik-period": {
+      "max_ms": 49.45,
+      "p50_ms": 15.15,
+      "p95_ms": 20.11,
+      "requests": 1200
+     },
+     "facts-by-concept": {
+      "max_ms": 89.28,
+      "p50_ms": 9.03,
+      "p95_ms": 11.98,
+      "requests": 1200
+     },
+     "filing-detail": {
+      "max_ms": 20.84,
+      "p50_ms": 6.04,
+      "p95_ms": 8.08,
+      "requests": 1200
+     },
+     "filings-by-cik": {
+      "max_ms": 31.76,
+      "p50_ms": 6.95,
+      "p95_ms": 9.42,
+      "requests": 1200
+     },
+     "filings-by-form": {
+      "max_ms": 24.64,
+      "p50_ms": 8.03,
+      "p95_ms": 11.0,
+      "requests": 1200
+     },
+     "sources-by-cik": {
+      "max_ms": 25.32,
+      "p50_ms": 6.63,
+      "p95_ms": 9.25,
+      "requests": 1200
+     }
+    },
+    "duration_seconds": 600.0,
+    "error_rate": 0.0,
+    "errors": {},
+    "first_20_requests_max_ms": 17.73,
+    "label": "warm",
+    "max_items_per_page": 100,
+    "max_ms": 119.69,
+    "mean_ms": 8.63,
+    "offered_rps": 20.0,
+    "p50_ms": 7.81,
+    "p95_ms": 15.31,
+    "p99_ms": 18.88,
+    "per_minute_p95_ms": [
+     14.6,
+     15.7,
+     15.55,
+     15.37,
+     15.03,
+     15.16,
+     15.86,
+     15.31,
+     15.25,
+     14.87
+    ],
+    "requests": 12000,
+    "schedule_max_lag_ms": 19.36,
+    "wall_seconds": 599.988
+   }
+  },
+  "rebuild": {
+   "counts": {
+    "companies": 100,
+    "fact_provenance": 100000,
+    "facts": 100000,
+    "filings": 1000,
+    "processing_runs": 1100
+   },
+   "digest": {
+    "counts": {
+     "amendment_links": 0,
+     "companies": 100,
+     "fact_provenance": 100000,
+     "facts": 100000,
+     "filing_sources": 2000,
+     "filings": 1000,
+     "reconciliations": 0
+    },
+    "sha256": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae"
+   },
+   "generation": "perf-rebuild",
+   "label": "rebuild",
+   "mode": "sequential-rebuild",
+   "observations_per_second": 1222.6,
+   "seconds": 81.793
+  },
+  "recovery": [
+   {
+    "attempts": [
+     {
+      "ended_at": "2026-09-23 05:14:39.843050+00:00",
+      "outcome": "lease_expired",
+      "owner": "perf-victim",
+      "started_at": "2026-09-23 05:13:39.039791+00:00",
+      "token": 1
+     },
+     {
+      "ended_at": "2026-09-23 05:14:39.877532+00:00",
+      "outcome": "succeeded",
+      "owner": "perf-rescuer-1-0",
+      "started_at": "2026-09-23 05:14:39.863333+00:00",
+      "token": 2
+     }
+    ],
+    "claimed_state_before_kill": "running",
+    "correct": true,
+    "counts": {
+     "companies": 0,
+     "fact_provenance": 100,
+     "facts": 100,
+     "filings": 0,
+     "processing_runs": 1
+    },
+    "event_states": [
+     "queued",
+     "running",
+     "queued",
+     "running",
+     "succeeded"
+    ],
+    "heartbeat_seconds": 15,
+    "lease_remaining_at_kill_seconds": 59.936,
+    "lease_seconds": 60,
+    "reclaimed_after_kill_seconds": 60.753,
+    "recovered": true,
+    "recovery_seconds": 61.006,
+    "redis_pending_after": 0,
+    "state": "succeeded",
+    "trial": 1
+   },
+   {
+    "attempts": [
+     {
+      "ended_at": "2026-09-23 05:15:45.606182+00:00",
+      "outcome": "lease_expired",
+      "owner": "perf-victim",
+      "started_at": "2026-09-23 05:14:44.796573+00:00",
+      "token": 1
+     },
+     {
+      "ended_at": "2026-09-23 05:15:45.645391+00:00",
+      "outcome": "succeeded",
+      "owner": "perf-rescuer-2-0",
+      "started_at": "2026-09-23 05:15:45.631440+00:00",
+      "token": 2
+     }
+    ],
+    "claimed_state_before_kill": "running",
+    "correct": true,
+    "counts": {
+     "companies": 0,
+     "fact_provenance": 100,
+     "facts": 100,
+     "filings": 0,
+     "processing_runs": 1
+    },
+    "event_states": [
+     "queued",
+     "running",
+     "queued",
+     "running",
+     "succeeded"
+    ],
+    "heartbeat_seconds": 15,
+    "lease_remaining_at_kill_seconds": 59.949,
+    "lease_seconds": 60,
+    "reclaimed_after_kill_seconds": 60.772,
+    "recovered": true,
+    "recovery_seconds": 61.025,
+    "redis_pending_after": 0,
+    "state": "succeeded",
+    "trial": 2
+   },
+   {
+    "attempts": [
+     {
+      "ended_at": "2026-09-23 05:16:51.331537+00:00",
+      "outcome": "lease_expired",
+      "owner": "perf-victim",
+      "started_at": "2026-09-23 05:15:50.543177+00:00",
+      "token": 1
+     },
+     {
+      "ended_at": "2026-09-23 05:16:51.374268+00:00",
+      "outcome": "succeeded",
+      "owner": "perf-rescuer-3-0",
+      "started_at": "2026-09-23 05:16:51.358275+00:00",
+      "token": 2
+     }
+    ],
+    "claimed_state_before_kill": "running",
+    "correct": true,
+    "counts": {
+     "companies": 0,
+     "fact_provenance": 100,
+     "facts": 100,
+     "filings": 0,
+     "processing_runs": 1
+    },
+    "event_states": [
+     "queued",
+     "running",
+     "queued",
+     "running",
+     "succeeded"
+    ],
+    "heartbeat_seconds": 15,
+    "lease_remaining_at_kill_seconds": 59.96,
+    "lease_seconds": 60,
+    "reclaimed_after_kill_seconds": 60.762,
+    "recovered": true,
+    "recovery_seconds": 61.015,
+    "redis_pending_after": 0,
+    "state": "succeeded",
+    "trial": 3
+   }
+  ],
+  "replay_four": {
+   "attempt_outcomes": {
+    "succeeded": 1200
+   },
+   "completed": true,
+   "counts": {
+    "companies": 100,
+    "fact_provenance": 100000,
+    "facts": 100000,
+    "filings": 1000,
+    "processing_runs": 1100
+   },
+   "dataset_fingerprint": "1175848a59e70f5631519c1ec81b7af969419f65d3b74ea925e0e236dd3eff89",
+   "digest": {
+    "counts": {
+     "amendment_links": 0,
+     "companies": 100,
+     "fact_provenance": 100000,
+     "facts": 100000,
+     "filing_sources": 2000,
+     "filings": 1000,
+     "reconciliations": 0
+    },
+    "sha256": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae"
+   },
+   "digest_seconds": 2.908,
+   "dispatcher": {
+    "batch_limit": 100,
+    "ceiling_jobs_per_second": 50.0,
+    "interval_seconds": 2.0,
+    "published_messages": 1200,
+    "sweep_renotifications": 1200,
+    "ticks": 24
+   },
+   "drain_seconds": 49.551,
+   "duplicate_deliveries": 100,
+   "enqueue_seconds": 1.032,
+   "generation": "perf-four",
+   "job_states": {
+    "succeeded": 1200
+   },
+   "jobs": 1200,
+   "jobs_per_second": 24.22,
+   "label": "four",
+   "max_sampled_worker_rss_bytes": 124518400,
+   "mode": "worker-jobs",
+   "observations": 100000,
+   "observations_per_second": 2018.1,
+   "open_jobs_at_end": 0,
+   "progress": [
+    {
+     "open_jobs": 1200,
+     "t": 0.23
+    },
+    {
+     "open_jobs": 1144,
+     "t": 5.37
+    },
+    {
+     "open_jobs": 1013,
+     "t": 10.55
+    },
+    {
+     "open_jobs": 882,
+     "t": 15.62
+    },
+    {
+     "open_jobs": 732,
+     "t": 21.15
+    },
+    {
+     "open_jobs": 593,
+     "t": 26.4
+    },
+    {
+     "open_jobs": 456,
+     "t": 31.55
+    },
+    {
+     "open_jobs": 315,
+     "t": 36.68
+    },
+    {
+     "open_jobs": 190,
+     "t": 41.86
+    },
+    {
+     "open_jobs": 56,
+     "t": 47.01
+    },
+    {
+     "open_jobs": 0,
+     "t": 49.55
+    }
+   ],
+   "unique_sources": 1100,
+   "worker_exit_codes": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "workers": 4
+  },
+  "replay_single": {
+   "attempt_outcomes": {
+    "succeeded": 1200
+   },
+   "completed": true,
+   "counts": {
+    "companies": 100,
+    "fact_provenance": 100000,
+    "facts": 100000,
+    "filings": 1000,
+    "processing_runs": 1100
+   },
+   "dataset_fingerprint": "1175848a59e70f5631519c1ec81b7af969419f65d3b74ea925e0e236dd3eff89",
+   "digest": {
+    "counts": {
+     "amendment_links": 0,
+     "companies": 100,
+     "fact_provenance": 100000,
+     "facts": 100000,
+     "filing_sources": 2000,
+     "filings": 1000,
+     "reconciliations": 0
+    },
+    "sha256": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae"
+   },
+   "digest_seconds": 3.118,
+   "dispatcher": {
+    "batch_limit": 100,
+    "ceiling_jobs_per_second": 50.0,
+    "interval_seconds": 2.0,
+    "published_messages": 1781,
+    "sweep_renotifications": 1781,
+    "ticks": 41
+   },
+   "drain_seconds": 82.819,
+   "duplicate_deliveries": 100,
+   "enqueue_seconds": 1.023,
+   "generation": "perf-single",
+   "job_states": {
+    "succeeded": 1200
+   },
+   "jobs": 1200,
+   "jobs_per_second": 14.49,
+   "label": "single",
+   "max_sampled_worker_rss_bytes": 124637184,
+   "mode": "worker-jobs",
+   "observations": 100000,
+   "observations_per_second": 1207.5,
+   "open_jobs_at_end": 0,
+   "progress": [
+    {
+     "open_jobs": 1200,
+     "t": 0.13
+    },
+    {
+     "open_jobs": 1140,
+     "t": 5.21
+    },
+    {
+     "open_jobs": 1063,
+     "t": 10.28
+    },
+    {
+     "open_jobs": 984,
+     "t": 15.37
+    },
+    {
+     "open_jobs": 903,
+     "t": 20.59
+    },
+    {
+     "open_jobs": 824,
+     "t": 25.59
+    },
+    {
+     "open_jobs": 769,
+     "t": 30.68
+    },
+    {
+     "open_jobs": 695,
+     "t": 35.74
+    },
+    {
+     "open_jobs": 620,
+     "t": 40.8
+    },
+    {
+     "open_jobs": 545,
+     "t": 46.05
+    },
+    {
+     "open_jobs": 469,
+     "t": 51.27
+    },
+    {
+     "open_jobs": 392,
+     "t": 56.51
+    },
+    {
+     "open_jobs": 316,
+     "t": 61.57
+    },
+    {
+     "open_jobs": 241,
+     "t": 66.63
+    },
+    {
+     "open_jobs": 165,
+     "t": 71.69
+    },
+    {
+     "open_jobs": 89,
+     "t": 76.74
+    },
+    {
+     "open_jobs": 14,
+     "t": 81.81
+    },
+    {
+     "open_jobs": 0,
+     "t": 82.82
+    }
+   ],
+   "unique_sources": 1100,
+   "worker_exit_codes": [
+    0
+   ],
+   "workers": 1
+  },
+  "seed": {
+   "archive_ready_seconds": 0.01,
+   "dataset_fingerprint": "1175848a59e70f5631519c1ec81b7af969419f65d3b74ea925e0e236dd3eff89",
+   "dataset_version": "synthetic-perf-v1",
+   "duplicate_deliveries": 100,
+   "machine": {
+    "cpu_count": 2,
+    "cpu_model": "AMD EPYC 9354P 32-Core Processor",
+    "memory_bytes": 8326631424
+   },
+   "observations": 100000,
+   "phase": "seed",
+   "planned_deliveries": 1200,
+   "seconds": 5.631,
+   "source_bytes": 15673290,
+   "sources": 1100,
+   "sources_by_kind": {
+    "facts": 1000,
+    "submissions": 100
+   },
+   "spec": {
+    "companies": 100,
+    "duplicate_ratio": 0.1,
+    "facts_per_filing": 100,
+    "filings_per_company": 10
+   }
+  },
+  "soak": {
+   "cycle_digests": {
+    "perf-soak-85608816-c0": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae",
+    "perf-soak-85608816-c18": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae"
+   },
+   "cycles_complete": 20,
+   "cycles_total": 20,
+   "database_bytes_first_last": [
+    586110643,
+    4610971315
+   ],
+   "drain_after_load_seconds": 1.014,
+   "enqueued": 21778,
+   "final": {
+    "database_bytes": 4649367219,
+    "open_by_state": {},
+    "open_jobs": 0,
+    "outbox_unsent": 0,
+    "pg_connections": 5,
+    "redis_connected_clients": 5,
+    "redis_pending": 0,
+    "redis_stream_length": 0,
+    "redis_used_memory_bytes": 1418472,
+    "succeeded": 21778,
+    "worker_rss_bytes": [
+     131170304,
+     131313664,
+     131387392,
+     131166208
+    ]
+   },
+   "job_states": {
+    "succeeded": 21778
+   },
+   "offered_rate_jobs_per_second": 12.1,
+   "reference_digest": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae",
+   "sample_count": 120,
+   "seconds": 1800.0,
+   "throughput_jobs_per_second": 12.092,
+   "windows": [
+    {
+     "jobs": 3629,
+     "p50_enqueue_to_success_seconds": 1.684,
+     "p95_enqueue_to_success_seconds": 2.084,
+     "window_minutes": "0-5"
+    },
+    {
+     "jobs": 3629,
+     "p50_enqueue_to_success_seconds": 1.674,
+     "p95_enqueue_to_success_seconds": 2.06,
+     "window_minutes": "5-10"
+    },
+    {
+     "jobs": 3632,
+     "p50_enqueue_to_success_seconds": 1.673,
+     "p95_enqueue_to_success_seconds": 2.07,
+     "window_minutes": "10-15"
+    },
+    {
+     "jobs": 3630,
+     "p50_enqueue_to_success_seconds": 1.684,
+     "p95_enqueue_to_success_seconds": 2.081,
+     "window_minutes": "15-20"
+    },
+    {
+     "jobs": 3629,
+     "p50_enqueue_to_success_seconds": 1.681,
+     "p95_enqueue_to_success_seconds": 2.093,
+     "window_minutes": "20-25"
+    },
+    {
+     "jobs": 3629,
+     "p50_enqueue_to_success_seconds": 1.68,
+     "p95_enqueue_to_success_seconds": 2.096,
+     "window_minutes": "25-30"
+    }
+   ],
+   "worker_exit_codes": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "workers": 4
+  },
+  "soak_rate_basis": "50% of four-worker replay"
+ },
+ "run_key": "perf-3fada9f8c50b49e4ad92f1e156b1b007",
+ "scenario": "m6.2_performance_baseline",
+ "schema_version": 1,
+ "source_report_sha256": "6caf0cd4b849a8e9ce381fcc1a337a78f07bfc186c5cec9a98584f863d1b2817",
+ "started_at": "2026-09-23T04:49:10.366019+00:00",
+ "summary_schema_version": 1,
+ "targets": {
+  "lease_seconds": 60,
+  "read_error_rate": 0.01,
+  "read_max_page": 100,
+  "read_p95_ms": 300.0,
+  "recovery_seconds": 120.0,
+  "replay_seconds": 600.0
+ },
+ "verdicts": [
+  {
+   "correct": true,
+   "details": {
+    "compare_match": true,
+    "digests": {
+     "four": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae",
+     "rebuild": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae",
+     "single": "9be5c25bdbdc7ba1409f516fd3d04cad7b7c918b33ba50f87c2138f14d6d16ae"
+    }
+   },
+   "measurement": "throughput_replay",
+   "result": "4 workers 49.6 s (24.22 jobs/s); 1 worker 82.8 s; digest match True",
+   "status": "pass",
+   "target": "4 workers replay 100,000 observations (+100 duplicate deliveries) in < 600 s; digest equals single-worker baseline",
+   "target_met": true
+  },
+  {
+   "correct": true,
+   "details": {
+    "cold": {
+     "achieved_rps": 20.0,
+     "max_ms": 114.69,
+     "p50_ms": 7.82,
+     "p95_ms": 15.53,
+     "p99_ms": 19.54,
+     "requests": 12000
+    },
+    "warm": {
+     "achieved_rps": 20.0,
+     "max_ms": 119.69,
+     "p50_ms": 7.81,
+     "p95_ms": 15.31,
+     "p99_ms": 18.88,
+     "requests": 12000
+    }
+   },
+   "measurement": "read_latency",
+   "result": "cold p95 15.53 ms p99 19.54 ms errors 0.000% max page 100; warm p95 15.31 ms p99 18.88 ms errors 0.000% max page 100",
+   "status": "pass",
+   "target": "20 req/s for 600 s each (cold, then warmed): p95 < 300 ms, errors < 1%, max page 100",
+   "target_met": true
+  },
+  {
+   "correct": true,
+   "details": {
+    "lease_seconds": [
+     60,
+     60,
+     60
+    ]
+   },
+   "measurement": "crash_recovery",
+   "result": "3 trials: 61.0 s, 61.0 s, 61.0 s",
+   "status": "pass",
+   "target": "SIGKILLed worker's job recovered <= 120 s under a 60 s lease; SQL correctness mandatory",
+   "target_met": true
+  },
+  {
+   "correct": true,
+   "details": {
+    "checks": {
+     "container.object-store.memory_bytes": {
+      "bounded": true,
+      "early_max": 339528908,
+      "early_median": 324324556,
+      "late_max": 325582848,
+      "late_median": 325582848,
+      "limit": 407036230.8,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 35729002.251
+     },
+     "container.postgres.memory_bytes": {
+      "bounded": false,
+      "early_max": 263192576,
+      "early_median": 208037478,
+      "late_max": 371510476,
+      "late_median": 337956044,
+      "limit": 323066265.6,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 358629102.423
+     },
+     "container.redis.memory_bytes": {
+      "bounded": true,
+      "early_max": 7172259,
+      "early_median": 4464836,
+      "late_max": 4497342,
+      "late_median": 4473225,
+      "limit": 16278092.9,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": -152601.164
+     },
+     "dispatcher_rss_bytes": {
+      "bounded": true,
+      "early_max": 125558784,
+      "early_median": 125526016,
+      "late_max": 125665280,
+      "late_median": 125644800,
+      "limit": 154891878.4,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 373028.958
+     },
+     "open_jobs": {
+      "bounded": true,
+      "early_max": 26,
+      "early_median": 21,
+      "late_max": 26,
+      "late_median": 22,
+      "limit": 77.0,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.785
+     },
+     "outbox_unsent": {
+      "bounded": true,
+      "early_max": 23,
+      "early_median": 10,
+      "late_max": 23,
+      "late_median": 10,
+      "limit": 73.7,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 2.978
+     },
+     "perf-soak-85608816-0.pool_checked_out": {
+      "bounded": true,
+      "early_max": 1,
+      "early_median": 0,
+      "late_max": 1,
+      "late_median": 0,
+      "limit": 3.1,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.361
+     },
+     "perf-soak-85608816-0.rss_bytes": {
+      "bounded": true,
+      "early_max": 129875968,
+      "early_median": 128692224,
+      "late_max": 131104768,
+      "late_median": 130318336,
+      "limit": 159640780.8,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 5858331.39
+     },
+     "perf-soak-85608816-0.telemetry_logs_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9640,
+      "failed_exports_at_end": 896,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-0.telemetry_traces_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9640,
+      "failed_exports_at_end": 896,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-0.threads": {
+      "bounded": true,
+      "early_max": 6,
+      "early_median": 5,
+      "late_max": 6,
+      "late_median": 5,
+      "limit": 8.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.412
+     },
+     "perf-soak-85608816-1.pool_checked_out": {
+      "bounded": true,
+      "early_max": 1,
+      "early_median": 0,
+      "late_max": 1,
+      "late_median": 0,
+      "limit": 3.1,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.147
+     },
+     "perf-soak-85608816-1.rss_bytes": {
+      "bounded": true,
+      "early_max": 129875968,
+      "early_median": 128733184,
+      "late_max": 131211264,
+      "late_median": 130490368,
+      "limit": 159640780.8,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 5967705.041
+     },
+     "perf-soak-85608816-1.telemetry_logs_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9855,
+      "failed_exports_at_end": 897,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-1.telemetry_traces_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9855,
+      "failed_exports_at_end": 897,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-1.threads": {
+      "bounded": true,
+      "early_max": 6,
+      "early_median": 5,
+      "late_max": 6,
+      "late_median": 5,
+      "limit": 8.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.13
+     },
+     "perf-soak-85608816-2.pool_checked_out": {
+      "bounded": true,
+      "early_max": 1,
+      "early_median": 0,
+      "late_max": 1,
+      "late_median": 0,
+      "limit": 3.1,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.076
+     },
+     "perf-soak-85608816-2.rss_bytes": {
+      "bounded": true,
+      "early_max": 130236416,
+      "early_median": 129081344,
+      "late_max": 131366912,
+      "late_median": 130650112,
+      "limit": 160037273.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 5716378.272
+     },
+     "perf-soak-85608816-2.telemetry_logs_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9713,
+      "failed_exports_at_end": 897,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-2.telemetry_traces_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9713,
+      "failed_exports_at_end": 897,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-2.threads": {
+      "bounded": true,
+      "early_max": 6,
+      "early_median": 5,
+      "late_max": 6,
+      "late_median": 5,
+      "limit": 8.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.042
+     },
+     "perf-soak-85608816-3.pool_checked_out": {
+      "bounded": true,
+      "early_max": 1,
+      "early_median": 0,
+      "late_max": 1,
+      "late_median": 0,
+      "limit": 3.1,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": -0.301
+     },
+     "perf-soak-85608816-3.rss_bytes": {
+      "bounded": true,
+      "early_max": 129802240,
+      "early_median": 128569344,
+      "late_max": 131166208,
+      "late_median": 130445312,
+      "limit": 159559680.0,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 6023874.275
+     },
+     "perf-soak-85608816-3.telemetry_logs_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9737,
+      "failed_exports_at_end": 896,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-3.telemetry_traces_queued": {
+      "bounded": true,
+      "capacity": 256,
+      "dropped_at_end": 9737,
+      "failed_exports_at_end": 896,
+      "max": 256,
+      "rule": "fixed capacity",
+      "samples": 120
+     },
+     "perf-soak-85608816-3.threads": {
+      "bounded": true,
+      "early_max": 6,
+      "early_median": 5,
+      "late_max": 6,
+      "late_median": 5,
+      "limit": 8.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": -0.286
+     },
+     "pg_connections": {
+      "bounded": true,
+      "early_max": 6,
+      "early_median": 5,
+      "late_max": 6,
+      "late_median": 5,
+      "limit": 8.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 0.05
+     },
+     "redis_pending": {
+      "bounded": true,
+      "early_max": 22,
+      "early_median": 4,
+      "late_max": 22,
+      "late_median": 4,
+      "limit": 72.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": -2.839
+     },
+     "redis_stream_length": {
+      "bounded": true,
+      "early_max": 26,
+      "early_median": 7,
+      "late_max": 26,
+      "late_median": 7,
+      "limit": 77.0,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": -2.785
+     },
+     "redis_used_memory_bytes": {
+      "bounded": true,
+      "early_max": 1423456,
+      "early_median": 1420712,
+      "late_max": 1423320,
+      "late_median": 1420712,
+      "limit": 9954409.6,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 266.821
+     }
+    },
+    "cycle_digests_match_reference": true,
+    "diagnostics_not_gated": {
+     "container.object-store.cgroup_active_file_bytes": {
+      "bounded": true,
+      "early_max": 16863232,
+      "early_median": 1658880,
+      "late_max": 1716224,
+      "late_median": 1716224,
+      "limit": 35326771.2,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": -5646920.178
+     },
+     "container.object-store.cgroup_anon_bytes": {
+      "bounded": true,
+      "early_max": 321048576,
+      "early_median": 319774720,
+      "late_max": 321146880,
+      "late_median": 321134592,
+      "limit": 369930649.6,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 40241487.548
+     },
+     "container.object-store.cgroup_file_bytes": {
+      "bounded": true,
+      "early_max": 20967424,
+      "early_median": 20180992,
+      "late_max": 19750912,
+      "late_median": 19750912,
+      "limit": 39841382.4,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": -2075514.327
+     },
+     "container.object-store.cgroup_shmem_bytes": {
+      "bounded": true,
+      "early_max": 0,
+      "early_median": 0,
+      "late_max": 0,
+      "late_median": 0,
+      "limit": 16777216.0,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 0.0
+     },
+     "container.postgres.cgroup_active_file_bytes": {
+      "bounded": false,
+      "early_max": 26832896,
+      "early_median": 0,
+      "late_max": 108994560,
+      "late_median": 97943552,
+      "limit": 46293401.6,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 244320226.044
+     },
+     "container.postgres.cgroup_anon_bytes": {
+      "bounded": true,
+      "early_max": 33001472,
+      "early_median": 18550784,
+      "late_max": 29593600,
+      "late_median": 18612224,
+      "limit": 53078835.2,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": -1008972.198
+     },
+     "container.postgres.cgroup_file_bytes": {
+      "bounded": true,
+      "early_max": 2377973760,
+      "early_median": 1394851840,
+      "late_max": 2462924800,
+      "late_median": 2436730880,
+      "limit": 2632548352.0,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 3534638725.152
+     },
+     "container.postgres.cgroup_shmem_bytes": {
+      "bounded": true,
+      "early_max": 147251200,
+      "early_median": 147193856,
+      "late_max": 147451904,
+      "late_median": 147419136,
+      "limit": 178753536.0,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 727881.841
+     },
+     "container.redis.cgroup_active_file_bytes": {
+      "bounded": true,
+      "early_max": 557056,
+      "early_median": 557056,
+      "late_max": 557056,
+      "late_median": 557056,
+      "limit": 17389977.6,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 0.0
+     },
+     "container.redis.cgroup_anon_bytes": {
+      "bounded": true,
+      "early_max": 3383296,
+      "early_median": 3375104,
+      "late_max": 3395584,
+      "late_median": 3383296,
+      "limit": 20498841.6,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 139657.642
+     },
+     "container.redis.cgroup_file_bytes": {
+      "bounded": true,
+      "early_max": 655360,
+      "early_median": 638976,
+      "late_max": 655360,
+      "late_median": 638976,
+      "limit": 17498112.0,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 588.77
+     },
+     "container.redis.cgroup_shmem_bytes": {
+      "bounded": true,
+      "early_max": 0,
+      "early_median": 0,
+      "late_max": 0,
+      "late_median": 0,
+      "limit": 16777216.0,
+      "rule": "early/late window growth",
+      "samples": 94,
+      "slope_per_hour": 0.0
+     },
+     "database_bytes": {
+      "bounded": false,
+      "early_max": 2065856179,
+      "early_median": 1460016819,
+      "late_max": 4610971315,
+      "late_median": 3999717043,
+      "limit": 2272441796.9,
+      "rule": "early/late window growth",
+      "samples": 112,
+      "slope_per_hour": 8130090368.309
+     }
+    },
+    "peak_worker_rss_bytes": 131309568,
+    "telemetry_capacity_respected": true,
+    "telemetry_dropped": {
+     "perf-soak-85608816-0": {
+      "logs": 9640,
+      "traces": 9640
+     },
+     "perf-soak-85608816-1": {
+      "logs": 9855,
+      "traces": 9855
+     },
+     "perf-soak-85608816-2": {
+      "logs": 9713,
+      "traces": 9713
+     },
+     "perf-soak-85608816-3": {
+      "logs": 9737,
+      "traces": 9737
+     }
+    }
+   },
+   "measurement": "soak_leak_check",
+   "result": "GROWTH DETECTED; 21778 jobs at 12.1 jobs/s offered, drained 12.092 jobs/s, 1.014 s post-load drain; peak worker RSS 125.2 MiB",
+   "status": "miss",
+   "target": "30-minute fixture soak: no unbounded queue, connection, memory or telemetry-buffer growth; capture peak memory and queue drain rate",
+   "target_met": false
+  }
+ ]
+}
