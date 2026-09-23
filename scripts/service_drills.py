@@ -36,18 +36,23 @@ class CommandResult:
     stdout: str
 
 
-def validate_project_name(project: str) -> str:
-    """Allow only an explicit drill namespace; never target normal projects."""
+def validate_isolated_project(project: str, pattern: re.Pattern[str], prefix: str) -> str:
+    """Allow only one explicit harness namespace; never target normal projects."""
     normalized = project.strip().lower()
-    if normalized in FORBIDDEN_PROJECTS or not PROJECT_PATTERN.fullmatch(normalized):
+    if normalized in FORBIDDEN_PROJECTS or not pattern.fullmatch(normalized):
         raise UnsafeProject(
-            f"refusing unsafe Compose project {project!r}; use {PROJECT_PREFIX}<short-unique-name>"
+            f"refusing unsafe Compose project {project!r}; use {prefix}<short-unique-name>"
         )
     return normalized
 
 
+def validate_project_name(project: str) -> str:
+    """Allow only an explicit drill namespace; never target normal projects."""
+    return validate_isolated_project(project, PROJECT_PATTERN, PROJECT_PREFIX)
+
+
 def load_fixture(path: Path) -> dict[str, Any]:
-    fixture = json.loads(path.read_text(encoding="utf-8"))
+    fixture: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     if fixture.get("schema_version") != 1:
         raise ValueError("failure-drill fixture schema_version must be 1")
     if fixture.get("scenario") != "database_outage_and_object_store_restart":
@@ -58,28 +63,11 @@ def load_fixture(path: Path) -> dict[str, Any]:
     return fixture
 
 
-class Harness:
-    def __init__(self, project: str, fixture: dict[str, Any], report_dir: Path) -> None:
-        self.requested_project = validate_project_name(project)
-        self.project = f"{self.requested_project}-{uuid.uuid4().hex[:10]}"
-        self.fixture = fixture
-        self.report_dir = report_dir
-        self.key = "drill-" + uuid.uuid4().hex
-        self.compose = [
-            "docker",
-            "compose",
-            "-p",
-            self.project,
-            "-f",
-            "compose.yaml",
-            "-f",
-            "compose.test.yaml",
-        ]
+class CommandRecorder:
+    """Bounded subprocess execution with every command, exit status and output recorded."""
+
+    def __init__(self) -> None:
         self.commands: list[CommandResult] = []
-        self.owns_project = False
-        self.environment: dict[str, Any] = {
-            "python": sys.version,
-        }
 
     def run_command(
         self, command: list[str], *, display: bool = True, timeout_seconds: float = 600
@@ -119,6 +107,45 @@ class Harness:
                 measured.returncode, measured.command, output=measured.stdout
             )
         return measured
+
+    def command_records(self) -> list[dict[str, Any]]:
+        return [
+            {
+                "command": item.command,
+                "returncode": item.returncode,
+                "duration_seconds": round(item.duration_seconds, 3),
+                "stdout": item.stdout,
+            }
+            for item in self.commands
+        ]
+
+
+class IsolatedCompose(CommandRecorder):
+    """Own one freshly generated child Compose project and record every command.
+
+    Subclasses must pass an already-validated base name. Cleanup is only permitted
+    after ``assert_project_unused`` proves that no labeled resources existed.
+    """
+
+    def __init__(self, requested_project: str, report_dir: Path) -> None:
+        super().__init__()
+        self.requested_project = requested_project
+        self.project = f"{self.requested_project}-{uuid.uuid4().hex[:10]}"
+        self.report_dir = report_dir
+        self.compose = [
+            "docker",
+            "compose",
+            "-p",
+            self.project,
+            "-f",
+            "compose.yaml",
+            "-f",
+            "compose.test.yaml",
+        ]
+        self.owns_project = False
+        self.environment: dict[str, Any] = {
+            "python": sys.version,
+        }
 
     def run(
         self, *arguments: str, capture: bool = False, timeout_seconds: float = 600
@@ -205,6 +232,28 @@ class Harness:
                 "docker_architecture": architecture,
             }
         )
+
+    def down(self) -> str | None:
+        """Remove only a project this instance proved it owns; return any cleanup error."""
+        if not self.owns_project:
+            return None
+        try:
+            self.run(
+                "down",
+                "--volumes",
+                "--remove-orphans",
+                timeout_seconds=120,
+            )
+        except Exception as exc:
+            return f"{type(exc).__name__}: {exc}"
+        return None
+
+
+class Harness(IsolatedCompose):
+    def __init__(self, project: str, fixture: dict[str, Any], report_dir: Path) -> None:
+        super().__init__(validate_project_name(project), report_dir)
+        self.fixture = fixture
+        self.key = "drill-" + uuid.uuid4().hex
 
     def probe(self, phase: str, *, capture: bool = False) -> dict[str, Any] | None:
         result = self.run(
@@ -310,19 +359,9 @@ class Harness:
             failure = f"{type(exc).__name__}: {exc}"
             raise
         finally:
-            cleanup_error: str | None = None
-            if self.owns_project:
-                try:
-                    self.run(
-                        "down",
-                        "--volumes",
-                        "--remove-orphans",
-                        timeout_seconds=120,
-                    )
-                except Exception as exc:
-                    cleanup_error = f"{type(exc).__name__}: {exc}"
-                    if failure is None:
-                        failure = cleanup_error
+            cleanup_error = self.down()
+            if cleanup_error is not None and failure is None:
+                failure = cleanup_error
             finished_at = datetime.now(UTC)
             report = {
                 "schema_version": 1,
@@ -340,15 +379,7 @@ class Harness:
                 "cleanup_error": cleanup_error,
                 "before": before,
                 "after": after,
-                "commands": [
-                    {
-                        "command": item.command,
-                        "returncode": item.returncode,
-                        "duration_seconds": round(item.duration_seconds, 3),
-                        "stdout": item.stdout,
-                    }
-                    for item in self.commands
-                ],
+                "commands": self.command_records(),
             }
             self.report_dir.mkdir(parents=True, exist_ok=True)
             report_path = self.report_dir / f"{started_at:%Y%m%dT%H%M%SZ}-{self.key}.json"
