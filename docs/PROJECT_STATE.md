@@ -6,9 +6,9 @@ Moving machines or agents? Start with the consolidated [implementation handoff a
 
 ## Current position
 
-**Phase:** M0–M5 and M6.1 complete. M6.2 performance-baseline evidence is recorded and awaiting review: 3 of 4 targets met, and the soak memory target is honestly missed with an evidence-backed explanation and a proposed revised rule. M6.3 is next.
+**Phase:** M0–M5 and M6.1 complete. M6.2 performance-baseline evidence is recorded and merged on `main` through PR #6: 3 of 4 targets met, and the soak memory target is honestly missed with an evidence-backed explanation and a proposed revised rule. M6.3 is next.
 
-M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6.1's isolated failure gate also passes. The latest full isolated suite, run on the Hermes Docker host at `fae3fdc` on 2026-09-23, passes **167 tests** with **91.67%** combined statement/branch coverage of domain and job modules. M6.3 and M7 remain planned. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest hosted result.
+M0–M5 local gates pass, including recorded-source reconciliation, protected operations, and correlated telemetry. M6.1's isolated failure gate also passes. The latest full isolated suite ran twice on the Hermes Docker host at `83f7fc1` on 2026-09-23, on branch `fix/ci-integration-timeout`. Both runs passed **168 tests** with **91.67%** combined statement/branch coverage of domain and job modules. M6.3 and M7 remain planned. The private GitHub repository is [adityaanantharaman16/SECRecon](https://github.com/adityaanantharaman16/SECRecon). CI has separate application and observability jobs; see [CI evidence](evidence/CI.md) and GitHub Actions for the latest hosted result.
 
 M6.1 now has a fixture-driven isolated failure harness, SQL invariant/trace/timing reports and a hard Compose-project refusal safeguard. The owner ran three consecutive clean isolated drills, confirmed the refusal against `secrecon`, and passed the full 111-test Docker gate at 91.67% coverage.
 
@@ -20,7 +20,7 @@ M6.2 adds an isolated performance harness. Its guide-sized acceptance run measur
 
 See [M6 evidence](evidence/M6.md).
 
-M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. M6.1 is merged on `main` through PR #4 (`24cee94`) and its acceptance-documentation PR #5 (`4158e6a`). M6.2 is unmerged on `feat/m6-performance-baseline`.
+M5 is merged on `main` at `5be2ba8`; its [main CI run passed](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35112209686), verified on 2026-09-19. M6.1 is merged on `main` through PR #4 (`24cee94`) and its acceptance-documentation PR #5 (`4158e6a`). M6.2 is merged on `main` through PR #6 (`6f949e0`). That merge's main CI run failed on a latent reconciliation query-plan defect, not on M6.2 code. The fix is on `fix/ci-integration-timeout`, unmerged; see the first session-log entry.
 
 The owner has specified **local for now, ideally free**. Vercel is an optional future presentation host, not a required backend dependency. Working name: SECRecon.
 
@@ -34,7 +34,7 @@ The owner has specified **local for now, ideally free**. Vercel is an optional f
 | M3: ingestion and rebuilds | Complete | [M3 evidence](evidence/M3.md) |
 | M4: reconciliation | Complete | [M4 evidence](evidence/M4.md); 79 tests pass |
 | M5: operations | Complete | [M5 evidence](evidence/M5.md); 94 tests, tracing smoke and alert gates |
-| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md). M6.1 complete. M6.2 evidence recorded and in review (replay, reads and recovery met; soak memory missed, explained, revised rule proposed). M6.3 still needs the recovery report and limitations, three consecutive full drill-matrix runs, and a soak-rule decision. |
+| M6: failure and performance evidence | In progress | [M6 evidence](evidence/M6.md). M6.1 complete. M6.2 evidence recorded and merged (PR #6) (replay, reads and recovery met; soak memory missed, explained, revised rule proposed). M6.3 still needs the recovery report and limitations, three consecutive full drill-matrix runs, and a soak-rule decision. |
 | M7: release and handoff | Not started | Local release, restore, rollback and case study |
 
 Allowed status values: Not started, In progress, Blocked, Complete. Link evidence when changing status; do not infer completion from time spent.
@@ -83,6 +83,65 @@ Start with five US companies, 10-K/10-Q and amendments, two years of filings; ex
 - M5 contracts: [operations and observability](adr/0004-operations-and-observability.md), [connected UI walkthrough](runbooks/OPERATIONS_UI.md).
 
 ## Session log
+
+### 2026-09-23 (evening): post-merge main CI failure diagnosed and fixed (reconciliation query plan)
+
+- Date / milestone / slice: 2026-09-23. This is a CI repair on `main` after the M6.2 merge, not a milestone slice. No milestone status changed.
+- What happened:
+  - [Main CI run 35879892780](https://github.com/adityaanantharaman16/SECRecon/actions/runs/35879892780), for merge commit `6f949e09` (PR #6), failed with `1 failed, 166 passed`.
+  - The failing test was `tests/integration/test_recorded_sources.py::test_real_pair_five_deliveries_preserve_digest_and_both_document_links`. PostgreSQL cancelled the facts/provenance join in `secrecon.db.reconciliation.observations()` at the 30 s `statement_timeout`.
+  - The tree is byte-identical to `6ed966c`, which passed hosted CI twice (runs 35868079562 and 35868046490).
+- Root cause: a latent query-plan defect, diagnosed with evidence rather than assumed to be runner noise.
+  - Hosted per-file timings for identical code were bimodal only for the two recorded-pair tests. `test_reconciliation.py` took 19/92/112 s and `test_recorded_sources.py` took 9.7/116/64 s, while `test_orchestration.py` took 7.6/8.1/8.1 s.
+  - Projection calls `observations()` in the transaction that has just written the snapshot. Planner statistics therefore cannot describe that generation, and the join is estimated at `rows=1` per side.
+  - The planner then picks a nested loop whose inner index scan ignores the join key (`Join Filter: f.fingerprint = p.fingerprint`). On the recorded pair this removes 5,031,112 rows per call.
+  - Autoanalyze timing decides the inner index: `facts_search` costs about 1.3 s per call, while `facts_pkey` plus an accession filter costs 18–20 s per call on this host.
+  - There are six calls per test. That gives about 116 s, the slow green run. The failed run's slower runner pushed one call past 30 s.
+  - The same defect applies outside tests to any new generation (replay/rebuild) or newly projected Company Facts snapshot, and the cost grows quadratically with snapshot size.
+  - Full write-up: [CI evidence](evidence/CI.md).
+- What now works:
+  - `observations()` issues two single-table indexed lookups instead of the join, so no plan can re-scan one table per row of the other. Result rows, keys and ordering are unchanged.
+  - Under the reproduced stale-statistics state, each lookup takes 3–6 ms, and `process_source` for a recorded document dropped from 72–77 s to 0.3–0.4 s.
+  - Local full-gate pytest time dropped from 178.72 s (the previous entry, `fae3fdc`) to 85.6 s and 87.0 s.
+- Files and architecture decisions changed:
+  - `src/secrecon/db/reconciliation.py`: the `observations()` body only.
+  - `tests/integration/test_reconciliation.py`: one new regression test.
+  - `docs/evidence/CI.md` and this file.
+  - No migration, index, dependency, Compose, `statement_timeout`, retry or ADR change. No existing assertion was modified.
+  - The two statements run under READ COMMITTED as separate snapshots. They are equivalent to the former single statement because callers hold the per-company projection advisory lock (module contract), and facts/provenance rows are insert-only.
+- Checks run (Hermes session; 2 vCPU / 7.75 GiB; Docker 29.8.1). Logs are in `.local/ci-fix/` in this worktree and are ignored.
+  - Hosted evidence: job logs for the three runs were fetched through the GitHub REST API and compared per file.
+  - Plan capture:
+    - A scratch diagnostic script, not committed, ran `EXPLAIN (ANALYZE, BUFFERS)` inside the real projection transaction on the recorded pair.
+    - Old query: `diag-plans-controlled.log` (never analyzed 1.30 s per call; analyzed with a prior generation 19.2 s per call).
+    - Fixed query: `diag-plans-controlled-fixed.log` (3–6 ms).
+  - Red: the new regression test run against the old query failed with `AssertionError: (Decimal('3204200'), 12400)` (`regression-red-old-query.log`).
+  - Green: `pytest tests/integration/test_reconciliation.py tests/integration/test_recorded_sources.py` gave 8 passed (`regression-green-fixed-query.log`).
+  - Sweep:
+    - Command: the whole integration suite against PostgreSQL with `auto_explain.log_min_duration=500ms`.
+    - Result: 61 passed. The PostgreSQL log contains no `duration:` entries, so no statement reached 500 ms (`sweep-integration-fixed.log`, `sweep-postgres-fixed.log`).
+  - Full gate run 1 (working tree = `83f7fc1` code), `docker compose -p secrecon-test-cifix1 -f compose.yaml -f compose.test.yaml run --build --rm test`:
+    - Ruff, format and strict mypy passed.
+    - **168 passed**, **91.67%** coverage, 85.62 s pytest (1m52 s wall), exit 0 (`full-gate-1.log`).
+  - Full gate run 2 (committed `83f7fc1`), same command with `-p secrecon-test-cifix2`:
+    - **168 passed**, **91.67%** coverage, 86.95 s pytest (1m54 s wall), exit 0 (`full-gate-2.log`).
+  - Host `.venv`: `ruff check .` passed; `ruff format --check .` reported 108 files formatted; `mypy src` found no issues in 43 files.
+  - Gate project deviation: the gate used fresh `secrecon-test-cifix1/2` projects instead of `-p secrecon-test`.
+    - The existing `secrecon-test` volumes belong to an earlier session's credentials, so `migrate` failed with `password authentication failed`.
+    - This unattended session may not run `down --volumes`. The attempt recreated that project's postgres/object-store containers on their existing volumes; no volume was removed.
+    - Fresh volumes match hosted CI, which starts empty.
+- What the owner should try:
+  - Read [CI evidence](evidence/CI.md).
+  - Compare this PR's hosted `test_reconciliation.py` and `test_recorded_sources.py` durations with the 92–116 s above.
+  - Optionally revert `observations()` locally and watch the new regression test fail on tuples read.
+- Concept to explain in plain language: the database plans routes from a map (statistics) drawn before today's new neighbourhood (generation) was built, so it believes each street has one house. Its plan was: for every house on street A, walk all of street B. That is harmless for one house and ruinous for 8,795. How often the map was redrawn (autoanalyze) decided whether the walk took 1 s or 20 s, which is why identical code sometimes passed. The fix asks two direct questions that stay cheap however stale the map is: which facts belong to this filing, and which of those came from this snapshot.
+- Known limitations / blocked work:
+  - The failing hosted run's exact plan was not captured, because CI has no `auto_explain`. The cause is inferred from its timing signature plus plans reproduced here.
+  - Only the integration suite was swept for other slow plans.
+  - Diagnostic Compose projects are still running on this host and should be removed with `docker compose -p <name> -f compose.yaml -f compose.test.yaml down --volumes`, which this session was not permitted to run: `secrecon-ci-diag`, `secrecon-ci-plan1`, `secrecon-ci-plan2`, `secrecon-ci-red`, `secrecon-ci-sweep`, `secrecon-test-cifix1`, `secrecon-test-cifix2`. The pre-existing `secrecon-test` services are also running; stop them without `--volumes` unless their old data is no longer wanted.
+- Migration or configuration changes: none. A local ignored `.env` was generated in this worktree with `scripts/bootstrap.py`.
+- Next concrete task: owner review of the PR, and hosted CI green on the PR and again on `main` after any merge. Then M6.3 as below.
+- Commit or PR: `83f7fc1` (fix plus regression test) and this documentation commit on `fix/ci-integration-timeout`. The PR is listed in the task handoff. Not merged.
 
 ### 2026-09-23 (later): M6.2 acceptance run recorded, test gate repaired and passing
 
